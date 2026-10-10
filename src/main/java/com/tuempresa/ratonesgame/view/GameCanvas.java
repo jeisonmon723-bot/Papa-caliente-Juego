@@ -40,7 +40,7 @@ public final class GameCanvas extends Canvas {
     private final Image fruitSheet;
     private final Image meatSheet;
     private final Image vegetableSheet;
-    private final Image kitchenTiles;
+    private final Image kitchenScene;
     private final Image tilesSheet;
     private final Image cheeseIcon;
     private final Map<Food.Type, Image> foodSprites = new EnumMap<>(Food.Type.class);
@@ -58,7 +58,8 @@ public final class GameCanvas extends Canvas {
         fruitSheet = resources.loadImage(GAMEPLAY_ROOT + "Fruit.png");
         meatSheet = resources.loadImage(GAMEPLAY_ROOT + "Meat.png");
         vegetableSheet = resources.loadImage(GAMEPLAY_ROOT + "Vegetables.png");
-        kitchenTiles = resources.loadImage(GAMEPLAY_ROOT + "KitchenTiles.png");
+        kitchenScene = resources.loadImage(SPRITE_ROOT
+                + "WhatsApp Image 2026-10-10 at 4.01.04 PM.jpeg");
         tilesSheet = resources.loadImage(GAMEPLAY_ROOT + "Tiles.png");
         cheeseIcon = resources.loadImage(GAMEPLAY_ROOT + "food/Cheese.png");
         loadFoodSprites(resources);
@@ -168,24 +169,7 @@ public final class GameCanvas extends Canvas {
 
     private void drawRestaurantZones(GraphicsContext graphics) {
         drawZoneLabel(graphics, "COCINA", 470, 88, Color.web("#70452f"));
-        graphics.setFill(Color.web("#e8d4ad"));
-        graphics.fillRect(320, 177, 360, 53);
-        graphics.setStroke(Color.web("#c99b61"));
-        graphics.setLineWidth(2);
-        for (int x = 324; x < 680; x += 24) {
-            graphics.strokeLine(x, 178, x, 229);
-        }
-        for (int y = 181; y < 230; y += 17) {
-            graphics.strokeLine(320, y, 680, y);
-        }
-        drawKitchenUtensils(graphics);
-        graphics.setFill(Color.web("#795039"));
-        graphics.fillRect(320, 230, 360, 74);
-        graphics.setFill(Color.web("#f1d49d"));
-        graphics.fillRect(320, 230, 360, 13);
-        graphics.setFill(Color.web("#986a43"));
-        graphics.fillRect(326, 243, 348, 53);
-        drawKitchenWorktop(graphics);
+        graphics.drawImage(kitchenScene, 320, 170, 600, 189);
 
         drawZoneLabel(graphics, "MESAS FAMILIARES", 1010, 85, Color.web("#70452f"));
         drawWallShelf(graphics, 1080, 188, 190);
@@ -246,21 +230,6 @@ public final class GameCanvas extends Canvas {
         graphics.fillOval(x + 10, y + 12, 28, 26);
         graphics.setFill(Color.web("#f4d58b"));
         graphics.fillOval(x + 17, y + 17, 14, 15);
-    }
-
-    private void drawKitchenUtensils(GraphicsContext graphics) {
-        graphics.setStroke(Color.web("#80573c"));
-        graphics.setLineWidth(3);
-        graphics.strokeLine(345, 174, 655, 174);
-        for (int frame = 0; frame < 10; frame++) {
-            graphics.drawImage(chefTools, frame * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
-                    350 + frame * 30, 150, 24, 24);
-        }
-    }
-
-    private void drawKitchenWorktop(GraphicsContext graphics) {
-        graphics.drawImage(kitchenTiles, 0, 176, 144, 48,
-                320, 177, 360, 120);
     }
 
     private void drawWallShelf(GraphicsContext graphics, double x, double y, double width) {
