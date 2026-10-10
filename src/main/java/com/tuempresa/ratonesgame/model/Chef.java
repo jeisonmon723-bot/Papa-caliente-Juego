@@ -91,6 +91,10 @@ public final class Chef extends Entity {
         return preparedFood != null;
     }
 
+    public Food getPreparedFood() {
+        return preparedFood;
+    }
+
     public void resetForNewGame() {
         setPosition(spawnX, spawnY);
         setVelocity(0, 0);

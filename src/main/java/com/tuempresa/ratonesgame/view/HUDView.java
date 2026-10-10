@@ -7,6 +7,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
@@ -39,6 +40,8 @@ public final class HUDView extends StackPane {
                 burrowStatus, burrowProgress, potatoStatus, alertStatus,
                 firstControls, secondControls);
         statusPanel.setPadding(new Insets(18));
+        // Keep the HUD from stretching over the game canvas in its StackPane.
+        statusPanel.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         statusPanel.getStyleClass().add("hud");
         StackPane.setAlignment(statusPanel, Pos.TOP_LEFT);
         burrowProgress.setPrefWidth(280);
