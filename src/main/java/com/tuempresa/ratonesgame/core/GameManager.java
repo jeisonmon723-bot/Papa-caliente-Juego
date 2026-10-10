@@ -108,9 +108,9 @@ public final class GameManager {
         secondPlayer.resetForNewGame();
         chef.resetForNewGame();
         firstPlayer.setParticipating(true);
-        secondPlayer.setParticipating(mode == GameMode.TWO_PLAYERS);
+        secondPlayer.setParticipating(false);
         burrowOwner = firstPlayer;
-        nextOwnerIndex = mode == GameMode.TWO_PLAYERS ? 1 : 0;
+        nextOwnerIndex = 0;
         configureNextBurrow();
         spawnFloorFood();
         if (random.nextDouble() < HOT_POTATO_SPAWN_CHANCE) {

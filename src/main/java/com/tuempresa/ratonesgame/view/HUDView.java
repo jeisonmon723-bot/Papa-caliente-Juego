@@ -12,7 +12,6 @@ import javafx.scene.layout.VBox;
 
 public final class HUDView extends StackPane {
     private final Player firstPlayer;
-    private final Player secondPlayer;
     private final Burrow burrow;
     private final GameManager gameManager;
     private final Label firstPlayerStatus = new Label();
@@ -31,10 +30,8 @@ public final class HUDView extends StackPane {
     private final StackPane captureOverlay = new StackPane();
     private final Label captureLabel = new Label();
 
-    public HUDView(Player firstPlayer, Player secondPlayer, Burrow burrow,
-                   GameManager gameManager) {
+    public HUDView(Player firstPlayer, Burrow burrow, GameManager gameManager) {
         this.firstPlayer = firstPlayer;
-        this.secondPlayer = secondPlayer;
         this.burrow = burrow;
         this.gameManager = gameManager;
         VBox statusPanel = new VBox(8, firstPlayerStatus, secondPlayerStatus,
@@ -71,16 +68,21 @@ public final class HUDView extends StackPane {
 
     public void refresh() {
         firstPlayerStatus.setText(playerStatus("Ratón 1", firstPlayer));
-        secondPlayerStatus.setText(playerStatus("Ratón 2", secondPlayer));
+        boolean versusChef = gameManager.getGameMode() == GameManager.GameMode.TWO_PLAYERS;
+        secondPlayerStatus.setText(versusChef
+                ? "Cocinero  |  Flechas para mover"
+                : "Modo: un jugador");
         int seconds = (int) Math.ceil(gameManager.getBurrowSecondsRemaining());
         roundTimer.setText(String.format("Cuota en: %02d:%02d", seconds / 60, seconds % 60));
         scoreStatus.setText("Madrigueras: " + gameManager.getScore()
             + "  |  Récord: " + gameManager.getHighScore());
-        healthStatus.setText("Salud: " + (int) firstPlayer.getHealth() + "% / "
-            + (secondPlayer.isParticipating() ? (int) secondPlayer.getHealth() + "%" : "1P"));
+        healthStatus.setText(versusChef
+                ? "Salud ratón: " + (int) firstPlayer.getHealth() + "%"
+                : "Salud: " + (int) firstPlayer.getHealth() + "% / 1P");
         firstHealth.setProgress(firstPlayer.getHealth() / 100.0);
-        secondHealth.setProgress(secondPlayer.isParticipating()
-            ? secondPlayer.getHealth() / 100.0 : 0);
+        secondHealth.setProgress(0);
+        secondHealth.setVisible(false);
+        secondHealth.setManaged(false);
         double fill = burrow.getFillPercent();
         burrowStatus.setText(String.format("Madriguera (%d/%d pts): %d%%",
             (int) burrow.getFoodPoints(), (int) burrow.getQuotaPoints(), (int) fill));
@@ -96,12 +98,14 @@ public final class HUDView extends StackPane {
         alertStatus.setText(gameManager.isAlertVisible() ? gameManager.getAlertMessage() : "");
         alertStatus.setVisible(gameManager.isAlertVisible());
         firstControls.setText("E: " + interactionHint(firstPlayer));
-        secondControls.setText("ENTER: " + interactionHint(secondPlayer));
-        secondControls.setVisible(secondPlayer.isParticipating());
-        secondControls.setManaged(secondPlayer.isParticipating());
+        secondControls.setText(versusChef
+                ? "Flechas: mover al cocinero"
+                : "");
+        secondControls.setVisible(versusChef);
+        secondControls.setManaged(versusChef);
     }
 
-    // E and Enter pick up food, then release it into the burrow when close enough.
+    // E picks up food, then releases it into the burrow when close enough.
     private String interactionHint(Player player) {
         return player.getHeldFood() == null
                 ? "Agarrar comida"

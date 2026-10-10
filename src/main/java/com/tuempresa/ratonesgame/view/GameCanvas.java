@@ -28,8 +28,8 @@ public final class GameCanvas extends Canvas {
 
     public GameCanvas(double width, double height, ResourceManager resources) {
         super(width, height);
-        mouseIdle = resources.loadImage(SPRITE_ROOT + "MouseIdle.png");
-        mouseRun = resources.loadImage(SPRITE_ROOT + "MouseRun.png");
+        mouseIdle = resources.loadImage(SPRITE_ROOT + "MouseIdle.svg");
+        mouseRun = resources.loadImage(SPRITE_ROOT + "MouseRun.svg");
         getGraphicsContext2D().setImageSmoothing(false);
     }
 

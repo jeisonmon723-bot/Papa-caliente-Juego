@@ -3,17 +3,18 @@ package com.tuempresa.ratonesgame.core;
 import javafx.scene.image.Image;
 import javafx.scene.media.AudioClip;
 import org.apache.batik.transcoder.TranscoderException;
-import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
-import org.apache.batik.transcoder.image.PNGTranscoder;
+import org.apache.batik.transcoder.TranscoderInput;
+import org.apache.batik.transcoder.image.ImageTranscoder;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
 
 public final class ResourceManager {
     private final Map<String, Image> images = new HashMap<>();
@@ -42,12 +43,44 @@ public final class ResourceManager {
                 return new Image(input);
             }
 
-            PNGTranscoder transcoder = new PNGTranscoder();
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-            transcoder.transcode(new TranscoderInput(input), new TranscoderOutput(output));
-            return new Image(new ByteArrayInputStream(output.toByteArray()));
+            BufferedImage rasterized = rasterizeSvg(input);
+            WritableImage image = new WritableImage(rasterized.getWidth(), rasterized.getHeight());
+            PixelWriter pixels = image.getPixelWriter();
+            for (int y = 0; y < rasterized.getHeight(); y++) {
+                for (int x = 0; x < rasterized.getWidth(); x++) {
+                    pixels.setArgb(x, y, rasterized.getRGB(x, y));
+                }
+            }
+            return image;
         } catch (IOException | TranscoderException exception) {
             throw new IllegalStateException("Could not load image: " + resourcePath, exception);
+        }
+    }
+
+    private BufferedImage rasterizeSvg(InputStream input) throws TranscoderException {
+        BufferedImageTranscoder transcoder = new BufferedImageTranscoder();
+        transcoder.transcode(new TranscoderInput(input), (TranscoderOutput) null);
+        if (transcoder.getImage() == null) {
+            throw new IllegalStateException("SVG transcoder produced no image");
+        }
+        return transcoder.getImage();
+    }
+
+    private static final class BufferedImageTranscoder extends ImageTranscoder {
+        private BufferedImage image;
+
+        @Override
+        public BufferedImage createImage(int width, int height) {
+            return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        }
+
+        @Override
+        public void writeImage(BufferedImage image, TranscoderOutput output) {
+            this.image = image;
+        }
+
+        public BufferedImage getImage() {
+            return image;
         }
     }
 }

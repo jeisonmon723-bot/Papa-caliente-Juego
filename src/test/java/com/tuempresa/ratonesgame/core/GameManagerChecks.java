@@ -1,5 +1,6 @@
 package com.tuempresa.ratonesgame.core;
 
+import com.tuempresa.ratonesgame.controller.InputController;
 import com.tuempresa.ratonesgame.model.Burrow;
 import com.tuempresa.ratonesgame.model.Chef;
 import com.tuempresa.ratonesgame.model.Food;
@@ -12,6 +13,8 @@ import javafx.geometry.Point2D;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 public final class GameManagerChecks {
     private GameManagerChecks() {
@@ -19,6 +22,7 @@ public final class GameManagerChecks {
 
     public static void main(String[] args) {
         supportsOneAndTwoPlayerModes();
+        mouseAndChefControlsWorkSimultaneously();
         newGameRestoresPlayerAndChefState();
         spawnsEightFoodTypesAndCapsTheirValue();
         chefCyclesThroughEightHotDishes();
@@ -32,7 +36,7 @@ public final class GameManagerChecks {
         hotPotatoDeliveryCompletesTheBurrow();
         carriedFoodSlowsPlayerByPortionSize();
         cameraUsesZoomedViewport();
-        System.out.println("Game manager checks passed (14)");
+        System.out.println("Game manager checks passed (15)");
     }
 
     private static void supportsOneAndTwoPlayerModes() {
@@ -42,7 +46,48 @@ public final class GameManagerChecks {
                 "second player should be disabled in 1P mode");
 
         GameManager twoPlayers = newManager(GameManager.GameMode.TWO_PLAYERS, 2);
-        check(twoPlayers.getActivePlayers().size() == 2, "2P mode should activate both players");
+        check(twoPlayers.getActivePlayers().size() == 1,
+                "versus mode should activate the mouse player and use the Chef as player two");
+        check(!twoPlayers.getPlayers().get(1).isParticipating(),
+                "versus mode should not activate a second mouse");
+    }
+
+    private static void mouseAndChefControlsWorkSimultaneously() {
+        Player mouse = new Player(256, 320);
+        Player unusedMouse = new Player(640, 320);
+        Chef chef = new Chef(1200, 350);
+        GameManager manager = new GameManager(GameManager.GameMode.TWO_PLAYERS,
+                mouse, unusedMouse, chef, new Burrow(160, 880, 38),
+                new RestaurantMap(), new Random(3));
+        InputController input = new InputController(mouse, chef, manager);
+
+        input.handleKeyPressed(keyEvent(KeyEvent.KEY_PRESSED, KeyCode.W));
+        input.handleKeyPressed(keyEvent(KeyEvent.KEY_PRESSED, KeyCode.UP));
+        input.handleKeyPressed(keyEvent(KeyEvent.KEY_PRESSED, KeyCode.RIGHT));
+
+        check(mouse.getVelocityY() < 0 && mouse.getVelocityX() == 0,
+                "WASD should move the mouse");
+        check(chef.getVelocityY() < 0 && chef.getVelocityX() > 0,
+                "arrow keys should move the Chef at the same time");
+
+        input.handleKeyReleased(keyEvent(KeyEvent.KEY_RELEASED, KeyCode.W));
+        check(mouse.getVelocityY() == 0,
+                "releasing the mouse key should not stop the Chef");
+        check(chef.getVelocityY() < 0 && chef.getVelocityX() > 0,
+                "Chef movement should remain active while mouse keys are released");
+
+        input.clearPressedKeys();
+        GameManager soloManager = new GameManager(GameManager.GameMode.ONE_PLAYER,
+                mouse, unusedMouse, chef, new Burrow(160, 880, 38),
+                new RestaurantMap(), new Random(4));
+        InputController soloInput = new InputController(mouse, chef, soloManager);
+        soloInput.handleKeyPressed(keyEvent(KeyEvent.KEY_PRESSED, KeyCode.RIGHT));
+        check(chef.getVelocityX() == 0 && chef.getVelocityY() == 0,
+                "arrow keys should not take manual control of the Chef in solo mode");
+    }
+
+    private static KeyEvent keyEvent(javafx.event.EventType<KeyEvent> type, KeyCode code) {
+        return new KeyEvent(type, "", "", code, false, false, false, false);
     }
 
     private static void spawnsEightFoodTypesAndCapsTheirValue() {
@@ -123,8 +168,8 @@ public final class GameManagerChecks {
         Player firstOwner = manager.getBurrowOwner();
         manager.update(GameManager.BURROW_DURATION_SECONDS);
         check(firstOwner.getLives() == 2, "expired quota should cost its owner one life");
-        check(manager.getBurrowOwner() != firstOwner,
-                "next two-player burrow should be assigned to the other player");
+        check(manager.getBurrowOwner() == firstOwner,
+                "versus mode burrow ownership should stay with the only mouse player");
         check(manager.getBurrowSecondsRemaining() == GameManager.BURROW_DURATION_SECONDS,
                 "a replacement burrow should receive a fresh two-minute timer");
     }

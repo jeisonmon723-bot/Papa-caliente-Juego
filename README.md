@@ -4,21 +4,29 @@
 
 ## Run
 
-Install Maven, then run from the repository root:
+Install Java 17, then run from the repository root. The Maven Wrapper downloads
+and runs the required Maven version automatically (an internet connection is
+needed the first time):
 
 ```powershell
-mvn javafx:run
+.\mvnw.cmd javafx:run
 ```
 
-Player 1 uses WASD. Player 2 uses the arrow keys.
+On macOS or Linux, use:
 
-The start screen selects 1P or local 2P. Player 1 interacts with `E`; Player 2 interacts with `Enter`. `Escape` pauses/resumes, and `Q` ends the current game and records the final score.
+```sh
+./mvnw javafx:run
+```
 
-Sprites and other original art resources are under `src/main/resources/com/tuempresa/ratonesgame/sprites/`. The generated prototype sheets are SVG; `ResourceManager` converts SVG images to PNG at runtime with Batik.
+Player 1 controls the mouse with WASD. In 1-player mode, the Chef is controlled by AI. In 2-player versus mode, player 2 controls the Chef with the arrow keys while player 1 continues controlling the mouse with WASD.
+
+The start screen selects 1P or local mouse-versus-Chef mode. The mouse interacts with `E` to pick up food and deliver it to the burrow. In versus mode, the Chef captures the mouse on contact. `Escape` pauses/resumes, and `Q` ends the current game and records the final score.
+
+Sprites and other original art resources are under `src/main/resources/com/tuempresa/ratonesgame/sprites/`. The generated prototype sheets are SVG; `ResourceManager` rasterizes SVG images in memory with Batik.
 
 ## Chef AI
 
-`GameEngine` owns the game state and updates the AI only while the game is running. Escape pauses/resumes the simulation; captured players are disabled by the engine's capture handler.
+`GameEngine` owns the game state and updates the Chef AI in 1-player mode. In 2-player versus mode, the arrow keys move the Chef and contact captures the mouse, which loses a life and respawns at its starting position. Escape pauses/resumes the simulation.
 
 - `ChefConfig` centralizes view angle/range, movement speeds, attack timings, search limits, and arrival tolerances.
 - `RestaurantMap` owns collision geometry, line-of-sight blockers, trap locations, workstations, and patrol points. Movement and BFS pathfinding use the same solid-obstacle list.
@@ -33,16 +41,16 @@ The chef targets the nearest currently visible player, retains that target while
 
 ## Burrows, Food, and Lives
 
-`GameManager` creates eight randomized floor-food pickups (one per normal type), each worth 1-15 points, and respawns them after pickup. Each active burrow has a 100-point quota and a 120-second timer; one active player owns the deadline in 2P, alternating after each new burrow. A timeout removes one life from that owner; completing the quota increments the score and moves the burrow. The high score is stored with Java Preferences.
+`GameManager` creates eight randomized floor-food pickups (one per normal type), each worth 1-15 points, and respawns them after pickup. Each burrow has a 100-point quota and a 120-second timer. The mouse player owns the deadline in both modes; a timeout removes one life, completing the quota increments the score and moves the burrow. The high score is stored with Java Preferences.
 
 Players start with 3 lives and 100 health. Holding a hot plate gives 5 seconds of grace, then drains 5 health per second. Losing all health costs one life. The Chef's eight hot-food types are only acquired by interacting near the Chef. The Papa Caliente has a 20% spawn chance once per game, a 30-second fuse after pickup, and fills the current burrow instantly if carried into it in time.
 
 ## Behavior Checks
 
-The standalone check runners (no JUnit dependency) cover directional/occluded vision, pathfinding around furniture, active/nearest target selection, searching and reacquiring, valid and missed broom attacks, pursuit-only burrow emptying, trap events, 1P/2P setup, player reset, all eight Chef dishes, food quota delivery, timeout/life loss/Game Over, paused timers, hot-food damage timing, hot-potato fuse/delivery, non-duplicating food respawns, carrying-weight speed penalties, and camera zoom.
+The standalone check runners (no JUnit dependency) cover directional/occluded vision, pathfinding around furniture, active/nearest target selection, searching and reacquiring, valid and missed broom attacks, pursuit-only burrow emptying, trap events, solo/versus setup, simultaneous mouse/Chef controls, player reset, all eight Chef dishes, food quota delivery, timeout/life loss/Game Over, paused timers, hot-food damage timing, hot-potato fuse/delivery, non-duplicating food respawns, carrying-weight speed penalties, and camera zoom.
 
 ```powershell
-mvn test-compile dependency:build-classpath "-Dmdep.outputFile=target/test-classpath.txt"
+.\mvnw.cmd test-compile dependency:build-classpath "-Dmdep.outputFile=target/test-classpath.txt"
 $classpath = "target/classes;target/test-classes;$((Get-Content target/test-classpath.txt -Raw).Trim())"
 java -cp $classpath com.tuempresa.ratonesgame.core.ChefIntegrationChecks
 java -cp $classpath com.tuempresa.ratonesgame.core.GameManagerChecks
