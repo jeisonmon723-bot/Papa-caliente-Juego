@@ -135,7 +135,13 @@ public final class GameManager {
             return;
         }
         if (player.getHeldFood() != null) {
-            deliverFood(player);
+            if (distance(player, burrow) <= burrow.getRadius() + BURROW_DELIVERY_MARGIN) {
+                deliverFood(player);
+            } else if (player.getHeldFood() instanceof HotPotato) {
+                showAlert("Lleva la Papa Caliente a la madriguera para soltarla", 2);
+            } else {
+                dropFood(player);
+            }
             return;
         }
 
@@ -242,10 +248,6 @@ public final class GameManager {
     }
 
     private void deliverFood(Player player) {
-        if (distance(player, burrow) > burrow.getRadius() + BURROW_DELIVERY_MARGIN) {
-            showAlert("Acércate a la madriguera para entregar", 1.7);
-            return;
-        }
         Food food = player.releaseFood();
         if (food instanceof HotPotato potato && !potato.isExploded()) {
             burrow.fillCompletely();
@@ -257,6 +259,12 @@ public final class GameManager {
         }
         burrow.addFood(food);
         showAlert("+" + food.getFoodPoints() + " puntos de comida", 1.4);
+    }
+
+    private void dropFood(Player player) {
+        Food food = player.releaseFood();
+        floorFood.add(new FoodItem(food, positionOf(player)));
+        showAlert("Objeto soltado", 1.2);
     }
 
     private void updateHotPotato(double deltaSeconds) {
@@ -277,14 +285,6 @@ public final class GameManager {
             hotPotato = null;
             showAlert("¡La Papa Caliente explotó! Se perdió", 2.5);
             return;
-        }
-        if (burrow.contains(potatoHolder)) {
-            burrow.fillCompletely();
-            potatoHolder.releaseFood();
-            potatoHolder = null;
-            potatoPickup = null;
-            hotPotato = null;
-            showAlert("¡Papa entregada! Madriguera completada", 2.5);
         }
     }
 

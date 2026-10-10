@@ -4,6 +4,8 @@ public final class Player extends Entity {
     private static final double MAX_HEAT = 100;
     private static final double HOT_FOOD_GRACE_SECONDS = 5;
     private static final double HOT_FOOD_DAMAGE_PER_SECOND = 5;
+    private static final double HOT_POTATO_GRACE_SECONDS = 3;
+    private static final double HOT_POTATO_DAMAGE_PER_SECOND = 4;
     private static final double MAX_CARRY_SPEED_PENALTY = 0.45;
 
     private final double spawnX;
@@ -46,13 +48,18 @@ public final class Player extends Entity {
             return;
         }
 
+        boolean holdingHotPotato = heldFood instanceof HotPotato;
+        double graceSeconds = holdingHotPotato
+                ? HOT_POTATO_GRACE_SECONDS : HOT_FOOD_GRACE_SECONDS;
+        double damagePerSecond = holdingHotPotato
+                ? HOT_POTATO_DAMAGE_PER_SECOND : HOT_FOOD_DAMAGE_PER_SECOND;
         double previousHoldSeconds = hotFoodHoldSeconds;
         hotFoodHoldSeconds += deltaSeconds;
         double damagingSeconds = Math.max(0,
-                hotFoodHoldSeconds - HOT_FOOD_GRACE_SECONDS)
-                - Math.max(0, previousHoldSeconds - HOT_FOOD_GRACE_SECONDS);
+                hotFoodHoldSeconds - graceSeconds)
+                - Math.max(0, previousHoldSeconds - graceSeconds);
         if (damagingSeconds > 0) {
-            health = Math.max(0, health - damagingSeconds * HOT_FOOD_DAMAGE_PER_SECOND);
+            health = Math.max(0, health - damagingSeconds * damagePerSecond);
             if (health == 0) {
                 loseLife();
             }

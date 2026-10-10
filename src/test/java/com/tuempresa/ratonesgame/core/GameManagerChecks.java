@@ -28,15 +28,18 @@ public final class GameManagerChecks {
         chefCyclesThroughEightHotDishes();
         foodRespawnCreatesANewInstance();
         pickedFoodCanBeDeliveredIntoQuota();
+        pressingEAgainDropsFoodAndRestoresSpeed();
         failedBurrowCostsTheAssignedPlayerALife();
         threeFailedBurrowsEndOnePlayerGame();
         pauseFreezesBurrowTimer();
         hotFoodDamageStartsAfterFiveSeconds();
+        hotPotatoDamageStartsAfterThreeSeconds();
+        hotPotatoCanOnlyBeDroppedAtBurrow();
         hotPotatoFuseExplodesAfterThirtySeconds();
         hotPotatoDeliveryCompletesTheBurrow();
         carriedFoodSlowsPlayerByPortionSize();
         cameraUsesZoomedViewport();
-        System.out.println("Game manager checks passed (14)");
+        System.out.println("Game manager checks passed (17)");
     }
 
     private static void gameUsesOnlyMouseControls() {
@@ -155,6 +158,31 @@ public final class GameManagerChecks {
                 "a 100-point quota should map one point to one percent");
     }
 
+    private static void pressingEAgainDropsFoodAndRestoresSpeed() {
+        GameManager manager = newManager(15);
+        Player player = manager.getPlayer();
+        FoodItem pickup = normalFood(manager);
+        Food.Type foodType = pickup.getFood().getType();
+        Point2D position = pickup.getPosition();
+        player.setPosition(position.getX(), position.getY());
+        player.setVelocity(1, 0);
+
+        manager.interact(player);
+        check(player.getHeldFood() != null && player.getVelocityX() < player.getSpeed(),
+                "picking food with E should apply its carrying speed penalty");
+
+        player.setPosition(100, 100);
+        manager.interact(player);
+        check(player.getHeldFood() == null,
+                "pressing E again outside the burrow should drop ordinary food");
+        check(Math.abs(player.getVelocityX() - player.getSpeed()) < 0.01,
+                "dropping food with E should immediately restore normal speed");
+        check(manager.getAvailableFoodItems().stream().anyMatch(item ->
+                        item.getPosition().equals(new Point2D(100, 100))
+                                && item.getFood().getType() == foodType),
+                "dropped food should be available at the player's location");
+    }
+
     private static void foodRespawnCreatesANewInstance() {
         FoodItem item = new FoodItem(new Food(Food.Type.CHEESE, 20, 12, false),
             new Point2D(300, 300));
@@ -207,17 +235,42 @@ public final class GameManagerChecks {
         check(player.getHealth() == 95, "hot food should deal 5 health damage per second");
     }
 
-    private static void hotPotatoFuseExplodesAfterThirtySeconds() {
+    private static void hotPotatoDamageStartsAfterThreeSeconds() {
+        Player player = new Player(100, 100);
+        player.holdFood(new HotPotato());
+        player.updateHeat(3);
+        check(player.getHealth() == 100,
+                "Papa Caliente should not damage the player during its first three seconds");
+        player.updateHeat(1);
+        check(player.getHealth() == 96,
+                "Papa Caliente should remove four health points per second after three seconds");
+        player.updateHeat(0.5);
+        check(player.getHealth() == 94,
+                "Papa Caliente damage should scale by elapsed time");
+    }
+
+    private static void hotPotatoCanOnlyBeDroppedAtBurrow() {
         GameManager manager = managerWithHotPotato(101);
         Player player = manager.getPlayer();
         collectHotPotato(manager, player);
-        manager.update(29.9);
-        check(manager.getHotPotato() != null
-                        && manager.getHotPotato().getSecondsRemaining() > 0,
-                "potato should remain safe before the 30-second fuse expires");
-        manager.update(0.2);
-        check(manager.getHotPotato() == null, "exploded potato should be removed from the HUD");
-        check(player.getHeldFood() == null, "exploded potato should no longer be carried");
+        player.setPosition(100, 100);
+        manager.interact(player);
+        check(player.getHeldFood() instanceof HotPotato,
+                "Papa Caliente should stay in the player's hands away from the burrow");
+        player.updateHeat(4);
+        check(player.getHealth() == 96,
+                "Papa Caliente should damage the player when E cannot release it");
+
+        player.setPosition(manager.getBurrow().getX(), manager.getBurrow().getY());
+        manager.interact(player);
+        check(player.getHeldFood() == null && manager.getHotPotato() == null,
+                "the interaction key should release Papa Caliente into the burrow");
+        check(manager.getBurrow().isComplete(),
+                "releasing Papa Caliente in the burrow should complete its quota");
+        double healthAfterDelivery = player.getHealth();
+        player.updateHeat(1);
+        check(player.getHealth() == healthAfterDelivery,
+                "delivering Papa Caliente should stop its damage immediately");
     }
 
     private static void hotPotatoDeliveryCompletesTheBurrow() {
@@ -225,7 +278,8 @@ public final class GameManagerChecks {
         Player player = manager.getPlayer();
         collectHotPotato(manager, player);
         player.setPosition(manager.getBurrow().getX(), manager.getBurrow().getY());
-        manager.update(0.01);
+        manager.interact(player);
+        manager.update(0);
         check(manager.getCompletedBurrows() == 1 && manager.getScore() == 1,
                 "delivering a live potato should instantly complete the burrow");
         check(player.getHeldFood() == null, "delivered potato should be removed from the player");
@@ -279,6 +333,19 @@ public final class GameManagerChecks {
         player.setPosition(position.getX(), position.getY());
         manager.interact(player);
         check(player.getHeldFood() instanceof HotPotato, "nearby potato should be picked up");
+    }
+
+    private static void hotPotatoFuseExplodesAfterThirtySeconds() {
+        GameManager manager = managerWithHotPotato(101);
+        Player player = manager.getPlayer();
+        collectHotPotato(manager, player);
+        manager.update(29.9);
+        check(manager.getHotPotato() != null
+                        && manager.getHotPotato().getSecondsRemaining() > 0,
+                "potato should remain safe before the 30-second fuse expires");
+        manager.update(0.2);
+        check(manager.getHotPotato() == null, "exploded potato should be removed from the HUD");
+        check(player.getHeldFood() == null, "exploded potato should no longer be carried");
     }
 
     private static FoodItem normalFood(GameManager manager) {

@@ -45,6 +45,10 @@ public final class ChefIntegrationChecks {
 
     private static void pathfindingRoutesAroundFurniture() {
         RestaurantMap map = new RestaurantMap();
+        check(!map.canOccupy(986, 279, 12),
+                "table collision should block the mouse and Chef");
+        check(map.canOccupy(986, 220, 12) && map.canOccupy(986, 338, 12),
+                "the areas around the table should remain walkable");
         List<Point2D> route = map.findPath(new Point2D(860, 280), new Point2D(1100, 280), 14);
         check(!route.isEmpty(), "path around dining table should exist");
         for (Point2D waypoint : route) {

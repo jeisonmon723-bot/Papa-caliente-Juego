@@ -34,9 +34,10 @@ public final class GameCanvas extends Canvas {
     private final Image mouseDamage;
     private final Image mouseTrap;
     private final Image ratWalk;
+    private final Image dinerSheet;
     private final Image chefSheet;
     private final Image chefTools;
-    private final Image furnitureSheet;
+    private final Image diningTable;
     private final Image fruitSheet;
     private final Image meatSheet;
     private final Image vegetableSheet;
@@ -52,9 +53,10 @@ public final class GameCanvas extends Canvas {
         mouseDamage = resources.loadImage(SPRITE_ROOT + "MouseDamage.png");
         mouseTrap = resources.loadImage(SPRITE_ROOT + "MouseTrap.png");
         ratWalk = resources.loadImage(GAMEPLAY_ROOT + "RatWalk.png");
+        dinerSheet = resources.loadImage(SPRITE_ROOT + "Diseño sin título.png");
         chefSheet = resources.loadImage(GAMEPLAY_ROOT + "ChefSheet.png");
         chefTools = resources.loadImage(GAMEPLAY_ROOT + "ChefTools.png");
-        furnitureSheet = resources.loadImage(GAMEPLAY_ROOT + "Furniture.png");
+        diningTable = resources.loadImage(SPRITE_ROOT + "mesa.png");
         fruitSheet = resources.loadImage(GAMEPLAY_ROOT + "Fruit.png");
         meatSheet = resources.loadImage(GAMEPLAY_ROOT + "Meat.png");
         vegetableSheet = resources.loadImage(GAMEPLAY_ROOT + "Vegetables.png");
@@ -169,18 +171,10 @@ public final class GameCanvas extends Canvas {
 
         drawZoneLabel(graphics, "MESAS FAMILIARES", 1010, 85, Color.web("#70452f"));
         drawWallShelf(graphics, 1080, 188, 190);
-        drawDiner(graphics, 955, 229, Color.web("#668b78"), Color.web("#d89a63"));
-        drawDiner(graphics, 1009, 229, Color.web("#7a7898"), Color.web("#d7a078"));
-        drawDiner(graphics, 1265, 229, Color.web("#9a6657"), Color.web("#e1b17d"));
-        drawDiner(graphics, 1319, 229, Color.web("#6c8790"), Color.web("#c98562"));
-        drawDiner(graphics, 955, 429, Color.web("#8b7651"), Color.web("#dca477"));
-        drawDiner(graphics, 1009, 429, Color.web("#638779"), Color.web("#e2b17e"));
-        drawDiner(graphics, 1265, 429, Color.web("#7d6d91"), Color.web("#d49b71"));
-        drawDiner(graphics, 1319, 429, Color.web("#a66d52"), Color.web("#e5b585"));
-        drawTable(graphics, 940, 245);
-        drawTable(graphics, 1250, 245);
-        drawTable(graphics, 940, 445);
-        drawTable(graphics, 1250, 445);
+        drawTableWithDiners(graphics, 940, 245, 0);
+        drawTableWithDiners(graphics, 1250, 245, 2);
+        drawTableWithDiners(graphics, 940, 445, 4);
+        drawTableWithDiners(graphics, 1250, 445, 6);
 
         drawZoneLabel(graphics, "CHIMENEA", 1555, 85, Color.web("#70452f"));
         graphics.setFill(Color.web("#5e4030"));
@@ -242,19 +236,25 @@ public final class GameCanvas extends Canvas {
         }
     }
 
-    private void drawDiner(GraphicsContext graphics, double x, double y,
-                           Color clothing, Color skin) {
-        graphics.setFill(Color.rgb(79, 55, 38, 0.2));
-        graphics.fillOval(x - 12, y + 5, 25, 8);
-        graphics.setFill(clothing);
-        graphics.fillRoundRect(x - 10, y - 1, 20, 19, 7, 7);
-        graphics.setFill(skin);
-        graphics.fillOval(x - 8, y - 14, 16, 16);
-        graphics.setFill(Color.web("#584337"));
-        graphics.fillOval(x - 9, y - 16, 18, 8);
-        graphics.setFill(Color.web("#fff3d9"));
-        graphics.fillOval(x - 4, y - 8, 2, 2);
-        graphics.fillOval(x + 3, y - 8, 2, 2);
+    private void drawTableWithDiners(GraphicsContext graphics, double x, double y,
+                                     int firstDinerIndex) {
+        drawDiner(graphics, x + 24, y, firstDinerIndex);
+        drawDiner(graphics, x + 68, y, firstDinerIndex + 1);
+        drawTable(graphics, x, y);
+        drawDiner(graphics, x + 24, y + 88, firstDinerIndex + 2);
+        drawDiner(graphics, x + 68, y + 88, firstDinerIndex + 3);
+    }
+
+    private void drawDiner(GraphicsContext graphics, double centerX, double feetY,
+                           int spriteIndex) {
+        double sourceWidth = dinerSheet.getWidth() * 0.07;
+        double sourceHeight = dinerSheet.getHeight() * 0.25;
+        double[] centers = {0.098, 0.248, 0.391, 0.525, 0.636, 0.755, 0.898};
+        int index = Math.floorMod(spriteIndex, centers.length);
+        graphics.drawImage(dinerSheet,
+                centers[index] * dinerSheet.getWidth() - sourceWidth / 2,
+                dinerSheet.getHeight() * 0.36, sourceWidth, sourceHeight,
+                centerX - 16, feetY - 46, 32, 46);
     }
 
     private void drawZoneLabel(GraphicsContext graphics, String label,
@@ -264,17 +264,12 @@ public final class GameCanvas extends Canvas {
     }
 
     private void drawTable(GraphicsContext graphics, double x, double y) {
-        drawChair(graphics, x + 4, y + 20);
-        drawChair(graphics, x + 70, y + 20);
-        drawChair(graphics, x + 4, y + 48);
-        drawChair(graphics, x + 70, y + 48);
-        graphics.drawImage(furnitureSheet, TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
-                x, y, 92, 68);
-    }
-
-    private void drawChair(GraphicsContext graphics, double x, double y) {
-        graphics.drawImage(furnitureSheet, 0, 0, TILE_SIZE, TILE_SIZE,
-                x, y, 20, 18);
+        double sourceX = diningTable.getWidth() * 0.35;
+        double sourceY = diningTable.getHeight() * 0.23;
+        double sourceWidth = diningTable.getWidth() * 0.30;
+        double sourceHeight = diningTable.getHeight() * 0.55;
+        graphics.drawImage(diningTable, sourceX, sourceY, sourceWidth, sourceHeight,
+                x - 28, y - 29, 130, 130);
     }
 
     private void drawFood(GraphicsContext graphics, java.util.List<FoodItem> foodItems) {

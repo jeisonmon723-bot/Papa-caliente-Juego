@@ -43,7 +43,7 @@ The chef targets the nearest currently visible player, retains that target while
 
 `GameManager` creates eight randomized floor-food pickups (one per normal type), each worth 1-15 points, and respawns them after pickup. Each burrow has a 100-point quota and a 120-second timer. The mouse player owns the deadline in both modes; a timeout removes one life, completing the quota increments the score and moves the burrow. The high score is stored with Java Preferences.
 
-Players start with 3 lives and 100 health. Holding a hot plate gives 5 seconds of grace, then drains 5 health per second. Losing all health costs one life. The Chef's eight hot-food types are only acquired by interacting near the Chef. The Papa Caliente has a 20% spawn chance once per game, a 30-second fuse after pickup, and fills the current burrow instantly if carried into it in time.
+Players start with 3 lives and 100 health. Holding a hot plate gives 5 seconds of grace, then drains 5 health per second. Papa Caliente gives 3 seconds of grace, then drains 4 health points per second until the player releases it in the burrow; pressing E away from the burrow does not drop it. Pressing E while carrying ordinary food drops it where the mouse stands, restoring normal movement speed. Losing all health costs one life. The Chef's eight hot-food types are only acquired by interacting near the Chef. Papa Caliente has a 20% spawn chance once per game and a 30-second fuse after pickup.
 
 ## Behavior Checks
 

@@ -2,6 +2,7 @@ package com.tuempresa.ratonesgame.view;
 
 import com.tuempresa.ratonesgame.core.GameManager;
 import com.tuempresa.ratonesgame.model.Burrow;
+import com.tuempresa.ratonesgame.model.HotPotato;
 import com.tuempresa.ratonesgame.model.Player;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -109,6 +110,8 @@ public final class HUDView extends StackPane {
     private String interactionHint() {
         return player.getHeldFood() == null
                 ? "agarrar comida"
-                : "soltar comida en la madriguera";
+                : player.getHeldFood() instanceof HotPotato
+                        ? "E en la madriguera para soltarla"
+                        : "E para soltar / entregar en madriguera";
     }
 }
