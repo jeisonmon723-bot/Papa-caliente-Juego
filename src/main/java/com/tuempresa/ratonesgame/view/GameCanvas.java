@@ -17,19 +17,49 @@ import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.ArcType;
 
+import java.util.EnumMap;
+import java.util.Map;
+
 public final class GameCanvas extends Canvas {
     private static final String SPRITE_ROOT = "/com/tuempresa/ratonesgame/sprites/";
+    private static final String GAMEPLAY_ROOT = "/com/tuempresa/ratonesgame/assets/gameplay/";
     private static final int TILE_SIZE = 32;
     public static final double WORLD_WIDTH = 1920;
     public static final double WORLD_HEIGHT = 1080;
 
     private final Image mouseIdle;
-    private final Image mouseRun;
+    private final Image mouseEat;
+    private final Image mouseDamage;
+    private final Image mouseTrap;
+    private final Image ratWalk;
+    private final Image chefSheet;
+    private final Image chefTools;
+    private final Image furnitureSheet;
+    private final Image fruitSheet;
+    private final Image meatSheet;
+    private final Image vegetableSheet;
+    private final Image kitchenTiles;
+    private final Image tilesSheet;
+    private final Image cheeseIcon;
+    private final Map<Food.Type, Image> foodSprites = new EnumMap<>(Food.Type.class);
 
     public GameCanvas(double width, double height, ResourceManager resources) {
         super(width, height);
-        mouseIdle = resources.loadImage(SPRITE_ROOT + "MouseIdle.svg");
-        mouseRun = resources.loadImage(SPRITE_ROOT + "MouseRun.svg");
+        mouseIdle = resources.loadImage(SPRITE_ROOT + "MouseIdle.png");
+        mouseEat = resources.loadImage(SPRITE_ROOT + "MouseEat.png");
+        mouseDamage = resources.loadImage(SPRITE_ROOT + "MouseDamage.png");
+        mouseTrap = resources.loadImage(SPRITE_ROOT + "MouseTrap.png");
+        ratWalk = resources.loadImage(GAMEPLAY_ROOT + "RatWalk.png");
+        chefSheet = resources.loadImage(GAMEPLAY_ROOT + "ChefSheet.png");
+        chefTools = resources.loadImage(GAMEPLAY_ROOT + "ChefTools.png");
+        furnitureSheet = resources.loadImage(GAMEPLAY_ROOT + "Furniture.png");
+        fruitSheet = resources.loadImage(GAMEPLAY_ROOT + "Fruit.png");
+        meatSheet = resources.loadImage(GAMEPLAY_ROOT + "Meat.png");
+        vegetableSheet = resources.loadImage(GAMEPLAY_ROOT + "Vegetables.png");
+        kitchenTiles = resources.loadImage(GAMEPLAY_ROOT + "KitchenTiles.png");
+        tilesSheet = resources.loadImage(GAMEPLAY_ROOT + "Tiles.png");
+        cheeseIcon = resources.loadImage(GAMEPLAY_ROOT + "food/Cheese.png");
+        loadFoodSprites(resources);
         getGraphicsContext2D().setImageSmoothing(false);
     }
 
@@ -116,6 +146,22 @@ public final class GameCanvas extends Canvas {
         graphics.fillRect(0, 128, WORLD_WIDTH, 8);
         graphics.setFill(Color.web("#c18a50"));
         graphics.fillRect(0, 169, WORLD_WIDTH, 7);
+        drawWoodBorder(graphics);
+    }
+
+    private void drawWoodBorder(GraphicsContext graphics) {
+        for (int x = 0; x < WORLD_WIDTH; x += TILE_SIZE) {
+            graphics.drawImage(tilesSheet, 15 * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
+                    x, 0, TILE_SIZE, TILE_SIZE);
+            graphics.drawImage(tilesSheet, 15 * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
+                    x, WORLD_HEIGHT - TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+        for (int y = TILE_SIZE; y < WORLD_HEIGHT - TILE_SIZE; y += TILE_SIZE) {
+            graphics.drawImage(tilesSheet, 15 * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
+                    0, y, TILE_SIZE, TILE_SIZE);
+            graphics.drawImage(tilesSheet, 15 * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
+                    WORLD_WIDTH - TILE_SIZE, y, TILE_SIZE, TILE_SIZE);
+        }
     }
 
     private void drawRestaurantZones(GraphicsContext graphics) {
@@ -179,12 +225,10 @@ public final class GameCanvas extends Canvas {
         drawWallFrame(graphics, 1780, 52, Color.web("#95613f"), Color.web("#a06c50"));
         graphics.setFill(Color.web("#a66c41"));
         graphics.fillRect(790, 113, 310, 9);
-        graphics.setFill(Color.web("#e0b86f"));
-        for (int x = 810; x < 1088; x += 46) {
-            graphics.fillOval(x, 96, 22, 17);
-            graphics.setFill(Color.web("#709071"));
-            graphics.fillOval(x + 6, 91, 8, 8);
-            graphics.setFill(Color.web("#e0b86f"));
+        int[] fruitFrames = {0, 2, 5, 7, 2, 0};
+        for (int item = 0; item < fruitFrames.length; item++) {
+            graphics.drawImage(fruitSheet, fruitFrames[item] * TILE_SIZE, 0,
+                    TILE_SIZE, TILE_SIZE, 810 + item * 46, 91, 22, 22);
         }
     }
 
@@ -205,55 +249,16 @@ public final class GameCanvas extends Canvas {
     private void drawKitchenUtensils(GraphicsContext graphics) {
         graphics.setStroke(Color.web("#80573c"));
         graphics.setLineWidth(3);
-        graphics.strokeLine(345, 190, 655, 190);
-        for (int x : new int[]{365, 405, 445, 565, 605, 645}) {
-            graphics.setStroke(Color.web("#986747"));
-            graphics.setLineWidth(2);
-            graphics.strokeLine(x, 190, x, 207);
-            graphics.setFill(Color.web("#d9e0d7"));
-            graphics.fillOval(x - 5, 203, 10, 13);
-            graphics.setStroke(Color.web("#986747"));
-            graphics.strokeLine(x - 4, 211, x + 4, 211);
+        graphics.strokeLine(345, 174, 655, 174);
+        for (int frame = 0; frame < 10; frame++) {
+            graphics.drawImage(chefTools, frame * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
+                    350 + frame * 30, 150, 24, 24);
         }
-        graphics.setFill(Color.web("#d7ded6"));
-        graphics.fillOval(476, 188, 29, 29);
-        graphics.setFill(Color.web("#aa7048"));
-        graphics.fillOval(482, 194, 17, 17);
-        graphics.setFill(Color.web("#e6e0cf"));
-        graphics.fillRect(521, 190, 8, 26);
-        graphics.setFill(Color.web("#bd8050"));
-        graphics.fillOval(517, 185, 16, 9);
     }
 
     private void drawKitchenWorktop(GraphicsContext graphics) {
-        graphics.setFill(Color.web("#e9ddc4"));
-        graphics.fillRoundRect(345, 246, 92, 43, 5, 5);
-        graphics.setFill(Color.web("#d8c8a7"));
-        graphics.fillRect(353, 253, 76, 5);
-        graphics.setFill(Color.web("#f5efe0"));
-        graphics.fillOval(369, 262, 39, 19);
-        graphics.setFill(Color.web("#d49a55"));
-        graphics.fillOval(380, 268, 17, 8);
-        graphics.setFill(Color.web("#e7dfcd"));
-        graphics.fillRoundRect(456, 250, 74, 36, 6, 6);
-        graphics.setFill(Color.web("#55514a"));
-        for (int x : new int[]{468, 495, 521}) {
-            graphics.fillOval(x, 254, 12, 12);
-            graphics.setFill(Color.web("#d9cbb0"));
-            graphics.fillOval(x + 3, 257, 6, 6);
-            graphics.setFill(Color.web("#55514a"));
-        }
-        graphics.setFill(Color.web("#f4eee0"));
-        graphics.fillOval(552, 254, 28, 18);
-        graphics.fillOval(585, 254, 28, 18);
-        graphics.setFill(Color.web("#d8a55e"));
-        graphics.fillOval(559, 259, 13, 8);
-        graphics.setFill(Color.web("#92a78a"));
-        graphics.fillOval(592, 259, 13, 8);
-        graphics.setFill(Color.web("#c6a77d"));
-        graphics.fillRect(635, 250, 23, 35);
-        graphics.setFill(Color.web("#f2e6ce"));
-        graphics.fillRect(638, 246, 17, 7);
+        graphics.drawImage(kitchenTiles, 0, 176, 144, 48,
+                320, 177, 360, 120);
     }
 
     private void drawWallShelf(GraphicsContext graphics, double x, double y, double width) {
@@ -296,35 +301,13 @@ public final class GameCanvas extends Canvas {
         drawChair(graphics, x + 70, y + 20);
         drawChair(graphics, x + 4, y + 48);
         drawChair(graphics, x + 70, y + 48);
-        graphics.setFill(Color.web("#543a2b"));
-        graphics.fillRect(x + 10, y + 12, 72, 10);
-        graphics.fillRect(x + 15, y + 57, 62, 9);
-        graphics.setFill(Color.web("#b68554"));
-        graphics.fillRoundRect(x, y, 92, 68, 8, 8);
-        graphics.setFill(Color.web("#d1a36c"));
-        graphics.fillRoundRect(x + 5, y + 5, 82, 58, 6, 6);
-        graphics.setFill(Color.web("#f1e5cd"));
-        graphics.fillRoundRect(x + 10, y + 9, 72, 48, 5, 5);
-        graphics.setStroke(Color.web("#d6c6a9"));
-        graphics.setLineWidth(1);
-        graphics.strokeLine(x + 46, y + 11, x + 46, y + 55);
-        graphics.strokeLine(x + 12, y + 33, x + 80, y + 33);
-        graphics.setFill(Color.web("#f0dfbd"));
-        graphics.fillOval(x + 34, y + 20, 23, 23);
-        graphics.setFill(Color.web("#f7f4e9"));
-        graphics.fillOval(x + 17, y + 20, 12, 12);
-        graphics.fillOval(x + 64, y + 37, 12, 12);
-        graphics.setFill(Color.web("#d89a53"));
-        graphics.fillOval(x + 41, y + 27, 10, 10);
-        graphics.setFill(Color.web("#8caa79"));
-        graphics.fillOval(x + 46, y + 25, 5, 4);
+        graphics.drawImage(furnitureSheet, TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
+                x, y, 92, 68);
     }
 
     private void drawChair(GraphicsContext graphics, double x, double y) {
-        graphics.setFill(Color.web("#795035"));
-        graphics.fillRoundRect(x, y, 17, 14, 4, 4);
-        graphics.setFill(Color.web("#bd8951"));
-        graphics.fillRoundRect(x + 2, y + 2, 13, 10, 3, 3);
+        graphics.drawImage(furnitureSheet, 0, 0, TILE_SIZE, TILE_SIZE,
+                x, y, 20, 18);
     }
 
     private void drawFood(GraphicsContext graphics, java.util.List<FoodItem> foodItems) {
@@ -332,36 +315,15 @@ public final class GameCanvas extends Canvas {
             double x = item.getPosition().getX();
             double y = item.getPosition().getY();
             Food food = item.getFood();
-            if (food instanceof com.tuempresa.ratonesgame.model.HotPotato) {
-                graphics.setFill(Color.rgb(238, 83, 38, 0.35));
+            if (food.isHot()) {
+                graphics.setFill(Color.rgb(238, 83, 38, 0.2));
                 graphics.fillOval(x - 18, y - 18, 36, 36);
-                graphics.setFill(Color.web("#e64e2f"));
-                graphics.fillOval(x - 9, y - 9, 18, 18);
-                graphics.setFill(Color.web("#ffd66b"));
-                graphics.fillRect(x - 2, y - 12, 4, 5);
-                continue;
             }
-            Color color = switch (food.getType()) {
-                case CHEESE -> Color.web("#f1c64d");
-                case MEAT, SAUSAGE, HOT_ROAST -> Color.web("#b85c43");
-                case BREAD, HOT_BREAD, HOT_PIE -> Color.web("#d9a35a");
-                case APPLE -> Color.web("#cf5143");
-                case FISH, HOT_FISH -> Color.web("#91b4aa");
-                case MUSHROOM -> Color.web("#d9c4a0");
-                case CARROT -> Color.web("#e8893a");
-                default -> Color.web("#d99043");
-            };
-            graphics.setFill(Color.web("#4d392a"));
-            graphics.fillRect(x - 9, y - 7, 18, 15);
-            graphics.setFill(color);
-            graphics.fillRect(x - 7, y - 7, 14, 12);
-            graphics.setFill(Color.web("#fff0c8"));
-            graphics.fillRect(x - 4, y - 5, 3, 3);
-            graphics.fillRect(x + 2, y + 1, 3, 3);
+            drawFoodSprite(graphics, food.getType(), x - 14, y - 14, 28, 28);
             if (food.isHot()) {
                 graphics.setFill(Color.web("#fff4d0"));
-                graphics.fillRect(x - 5, y - 14, 2, 5);
-                graphics.fillRect(x + 4, y - 16, 2, 6);
+                graphics.fillOval(x - 5, y - 20, 2, 4);
+                graphics.fillOval(x + 4, y - 18, 2, 4);
             }
         }
     }
@@ -370,9 +332,47 @@ public final class GameCanvas extends Canvas {
         if (player.getHeldFood() == null) {
             return;
         }
-        graphics.setFill(player.getHeldFood() instanceof com.tuempresa.ratonesgame.model.HotPotato
-                ? Color.web("#ef5635") : Color.web("#f1c64d"));
-        graphics.fillRect(player.getX() + 8, player.getY() - 14, 8, 8);
+        drawFoodSprite(graphics, player.getHeldFood().getType(),
+                player.getX() + 8, player.getY() - 20, 20, 20);
+    }
+
+    private void loadFoodSprites(ResourceManager resources) {
+        foodSprites.put(Food.Type.CHEESE, loadFoodSprite(resources, "Cheese"));
+        foodSprites.put(Food.Type.MEAT, loadFoodSprite(resources, "Steak"));
+        foodSprites.put(Food.Type.BREAD, loadFoodSprite(resources, "Bread"));
+        foodSprites.put(Food.Type.SAUSAGE, loadFoodSprite(resources, "Sausages"));
+        foodSprites.put(Food.Type.APPLE, loadFoodSprite(resources, "Apple"));
+        foodSprites.put(Food.Type.FISH, loadFoodSprite(resources, "Fish"));
+        foodSprites.put(Food.Type.HOT_PIZZA, loadFoodSprite(resources, "PieApple"));
+        foodSprites.put(Food.Type.HOT_PASTA, loadFoodSprite(resources, "Sushi"));
+        foodSprites.put(Food.Type.HOT_FISH, loadFoodSprite(resources, "FishFillet"));
+        foodSprites.put(Food.Type.HOT_PIE, loadFoodSprite(resources, "PiePumpkin"));
+        foodSprites.put(Food.Type.HOT_VEGETABLES, loadFoodSprite(resources, "Tomato"));
+        foodSprites.put(Food.Type.HOT_BREAD, loadFoodSprite(resources, "Bread"));
+        foodSprites.put(Food.Type.HOT_POTATO, loadFoodSprite(resources, "Potato"));
+    }
+
+    private Image loadFoodSprite(ResourceManager resources, String name) {
+        return resources.loadImage(GAMEPLAY_ROOT + "food/" + name + ".png");
+    }
+
+    private void drawFoodSprite(GraphicsContext graphics, Food.Type type,
+                                double x, double y, double width, double height) {
+        switch (type) {
+            case MUSHROOM -> drawSheetFrame(graphics, vegetableSheet, 6, x, y, width, height);
+            case CARROT -> drawSheetFrame(graphics, vegetableSheet, 3, x, y, width, height);
+            case HOT_SOUP -> drawSheetFrame(graphics, chefTools, 6, x, y, width, height);
+            case HOT_ROAST -> drawSheetFrame(graphics, meatSheet, 1, x, y, width, height);
+            case HOT_VEGETABLES -> graphics.drawImage(
+                    foodSprites.get(type), x, y, width, height);
+            default -> graphics.drawImage(foodSprites.get(type), x, y, width, height);
+        }
+    }
+
+    private void drawSheetFrame(GraphicsContext graphics, Image sheet, int frame,
+                                double x, double y, double width, double height) {
+        graphics.drawImage(sheet, frame * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
+                x, y, width, height);
     }
 
     private void drawBurrow(GraphicsContext graphics, Burrow burrow) {
@@ -431,35 +431,73 @@ public final class GameCanvas extends Canvas {
             graphics.strokeLine(x - 8, y, x + 8, y);
             graphics.strokeLine(x - 5, y - 4, x - 5, y + 4);
             graphics.strokeLine(x + 5, y - 4, x + 5, y + 4);
+            graphics.save();
+            graphics.setGlobalAlpha(trap.isActive() ? 1 : 0.55);
+            int frame = (int) ((System.nanoTime() / 220_000_000L) % 4);
+            graphics.drawImage(mouseTrap, 0, frame * TILE_SIZE, TILE_SIZE, TILE_SIZE,
+                    x - 16, y - 16, TILE_SIZE, TILE_SIZE);
+            graphics.restore();
+            graphics.drawImage(cheeseIcon, x + 7, y - 16, 12, 12);
         }
     }
 
     private void drawPlayer(GraphicsContext graphics, Player player, Color marker) {
-        Image sprite = player.isMoving() ? mouseRun : mouseIdle;
-        int frame = (int) ((System.nanoTime() / 180_000_000L) % 6);
-        double frameY = frame * TILE_SIZE;
-        graphics.drawImage(sprite, 0, frameY, TILE_SIZE, TILE_SIZE,
-                player.getX() - TILE_SIZE / 2.0, player.getY() - TILE_SIZE / 2.0,
-                TILE_SIZE, TILE_SIZE);
+        long animationFrame = System.nanoTime() / 180_000_000L;
+        Image sprite;
+        int sourceX = 0;
+        int sourceY;
+        if (player.getHealth() < 40) {
+            sprite = mouseDamage;
+            sourceY = (int) (animationFrame % 4) * TILE_SIZE;
+        } else if (player.getHeldFood() != null && !player.isMoving()) {
+            sprite = mouseEat;
+            sourceY = (int) (animationFrame % 5) * TILE_SIZE;
+        } else if (player.isMoving()) {
+            sprite = ratWalk;
+            sourceX = (int) (animationFrame % 4) * TILE_SIZE;
+            sourceY = 0;
+        } else {
+            sprite = mouseIdle;
+            sourceY = (int) (animationFrame % 6) * TILE_SIZE;
+        }
+        graphics.save();
+        if (sprite == ratWalk && player.getVelocityX() < 0) {
+            graphics.translate(player.getX(), 0);
+            graphics.scale(-1, 1);
+            graphics.drawImage(sprite, sourceX, sourceY, TILE_SIZE, TILE_SIZE,
+                    -TILE_SIZE / 2.0, player.getY() - TILE_SIZE / 2.0,
+                    TILE_SIZE, TILE_SIZE);
+        } else {
+            graphics.drawImage(sprite, sourceX, sourceY, TILE_SIZE, TILE_SIZE,
+                    player.getX() - TILE_SIZE / 2.0, player.getY() - TILE_SIZE / 2.0,
+                    TILE_SIZE, TILE_SIZE);
+        }
+        graphics.restore();
         graphics.setFill(marker);
         graphics.fillRect(player.getX() - 3, player.getY() + 17, 6, 3);
     }
 
     private void drawChef(GraphicsContext graphics, Chef chef, AttackSystem attack) {
-        graphics.setFill(chef.getState() == Chef.State.CHASING
-                ? Color.web("#9b4337") : Color.web("#44332b"));
-        graphics.fillOval(chef.getX() - 12, chef.getY() - 12, 24, 24);
-        graphics.setFill(Color.web("#eee6d2"));
-        graphics.fillOval(chef.getX() - 10, chef.getY() - 15, 20, 16);
-        graphics.setFill(Color.web("#b84e3e"));
-        graphics.fillRect(chef.getX() - 7, chef.getY() + 2, 14, 8);
+        long animationFrame = System.nanoTime() / 180_000_000L;
+        int frame = chef.isMoving() ? 4 + (int) (animationFrame % 8)
+                : (int) (animationFrame % 4);
+        if (attack.getPhase() == AttackSystem.Phase.STRIKING) {
+            frame = 11;
+        }
+        graphics.save();
+        if (chef.getFacingX() < 0) {
+            graphics.translate(chef.getX(), 0);
+            graphics.scale(-1, 1);
+            graphics.drawImage(chefSheet, frame * 48, 0, 48, 56,
+                    -22, chef.getY() - 28, 44, 52);
+        } else {
+            graphics.drawImage(chefSheet, frame * 48, 0, 48, 56,
+                    chef.getX() - 22, chef.getY() - 28, 44, 52);
+        }
+        graphics.restore();
         if (chef.hasPreparedFood()) {
-            graphics.setFill(Color.web("#efe3ce"));
-            graphics.fillOval(chef.getX() + 12, chef.getY() - 14, 18, 18);
-            graphics.setFill(Color.web("#d68a42"));
-            graphics.fillOval(chef.getX() + 17, chef.getY() - 9, 8, 8);
-            graphics.setFill(Color.web("#fff5d8"));
-            graphics.fillRect(chef.getX() + 18, chef.getY() - 20, 2, 5);
+            drawFoodSprite(graphics, chef.getPreparedFood().getType(),
+                    chef.getX() + 14, chef.getY() - 22, 20, 20);
         }
         drawBroom(graphics, chef, attack);
     }
@@ -475,10 +513,8 @@ public final class GameCanvas extends Canvas {
         graphics.translate(chef.getX(), chef.getY());
         graphics.rotate(angle);
         graphics.setGlobalAlpha(attack.isStrikeActive() ? 1 : 0.55);
-        graphics.setFill(Color.web("#765033"));
-        graphics.fillRect(12, -3, 32, 6);
-        graphics.setFill(attack.isStrikeActive() ? Color.web("#d6b86f") : Color.web("#f3d887"));
-        graphics.fillRect(39, -7, 9, 14);
+        graphics.drawImage(chefTools, 9 * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
+                10, -12, 42, 24);
         graphics.restore();
     }
 }

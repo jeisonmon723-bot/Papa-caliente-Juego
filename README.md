@@ -22,7 +22,7 @@ Player 1 controls the mouse with WASD. In 1-player mode, the Chef is controlled 
 
 The start screen selects 1P or local mouse-versus-Chef mode. The mouse interacts with `E` to pick up food and deliver it to the burrow. In versus mode, the Chef captures the mouse on contact. `Escape` pauses/resumes, and `Q` ends the current game and records the final score.
 
-Sprites and other original art resources are under `src/main/resources/com/tuempresa/ratonesgame/sprites/`. The generated prototype sheets are SVG; `ResourceManager` rasterizes SVG images in memory with Batik.
+Sprites and original art resources are under `src/main/resources/com/tuempresa/ratonesgame/sprites/`. The game also renders the selected gameplay sheets in `src/main/resources/com/tuempresa/ratonesgame/assets/gameplay/`: animated Chef and mouse sprites, food icons, kitchen tools, furniture, and restaurant tiles. The generated prototype sheets are SVG; `ResourceManager` rasterizes SVG images in memory with Batik.
 
 ## Chef AI
 
