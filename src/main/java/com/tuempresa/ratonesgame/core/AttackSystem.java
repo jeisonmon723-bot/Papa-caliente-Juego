@@ -6,7 +6,6 @@ import com.tuempresa.ratonesgame.model.Player;
 import com.tuempresa.ratonesgame.world.RestaurantMap;
 import javafx.geometry.Point2D;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 public final class AttackSystem {
@@ -48,7 +47,7 @@ public final class AttackSystem {
         return true;
     }
 
-    public void update(double deltaSeconds, Chef chef, List<Player> players,
+    public void update(double deltaSeconds, Chef chef, Player target,
                        Burrow burrow, Consumer<Player> onHit) {
         if (phase == Phase.READY) {
             return;
@@ -60,12 +59,10 @@ public final class AttackSystem {
         }
         if (phase == Phase.STRIKING) {
             if (!hitRegistered) {
-                for (Player player : players) {
-                    if (player.isActive() && !burrow.contains(player) && intersectsSweep(chef, player)) {
-                        hitRegistered = true;
-                        onHit.accept(player);
-                        break;
-                    }
+                if (target.isActive() && !burrow.contains(target)
+                        && intersectsSweep(chef, target)) {
+                    hitRegistered = true;
+                    onHit.accept(target);
                 }
             }
             if (phaseElapsed >= config.attackActiveSeconds()) {
@@ -93,6 +90,13 @@ public final class AttackSystem {
 
     public Point2D getAttackDirection() {
         return attackDirection;
+    }
+
+    public void reset() {
+        phase = Phase.READY;
+        attackDirection = new Point2D(1, 0);
+        phaseElapsed = 0;
+        hitRegistered = false;
     }
 
     private boolean intersectsSweep(Chef chef, Player player) {

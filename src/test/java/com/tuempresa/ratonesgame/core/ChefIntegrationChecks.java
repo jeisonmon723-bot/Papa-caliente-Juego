@@ -17,14 +17,14 @@ public final class ChefIntegrationChecks {
     public static void main(String[] args) {
         visionChecksDirectionAndOcclusion();
         pathfindingRoutesAroundFurniture();
-        chefChoosesVisibleActivePlayer();
-        chefPrefersNearestVisiblePlayer();
+        chefTargetsTheSinglePlayer();
         chefSearchesAndResumesWhenVisionReturns();
+        resettingChefAIStopsThePreviousPursuit();
         broomAttackHasWindupAndSingleHit();
         broomAttackCanMiss();
         chasedBurrowEntryRuleRequiresNewEntry();
         trapEventsRespectTrapState();
-        System.out.println("Chef integration checks passed (10)");
+        System.out.println("Chef integration checks passed (9)");
     }
 
     private static void visionChecksDirectionAndOcclusion() {
@@ -53,34 +53,19 @@ public final class ChefIntegrationChecks {
         }
     }
 
-    private static void chefChoosesVisibleActivePlayer() {
+    private static void chefTargetsTheSinglePlayer() {
         RestaurantMap map = new RestaurantMap();
         Burrow burrow = new Burrow(160, 880, 38);
         Chef chef = new Chef(500, 360);
-        Player first = new Player(640, 360);
-        Player second = new Player(620, 360);
-        second.capture();
-        ChefAI ai = new ChefAI(chef, ChefConfig.standard(first.getSpeed()), map, burrow);
+        Player player = new Player(640, 360);
+        ChefAI ai = new ChefAI(chef, ChefConfig.standard(player.getSpeed()), map, burrow);
 
-        ai.update(1.0 / 60, List.of(first, second));
+        ai.update(1.0 / 60, player);
 
         check(ai.getState() == Chef.State.CHASING, "chef should enter chase state");
-        check(ai.getTarget() == first, "captured players must not be selected");
-        check(Math.hypot(chef.getVelocityX(), chef.getVelocityY()) > first.getSpeed(),
+        check(ai.getTarget() == player, "chef should target the only player");
+        check(Math.hypot(chef.getVelocityX(), chef.getVelocityY()) > player.getSpeed(),
                 "chase speed should exceed player speed");
-    }
-
-    private static void chefPrefersNearestVisiblePlayer() {
-        RestaurantMap map = new RestaurantMap();
-        Burrow burrow = new Burrow(160, 880, 38);
-        Chef chef = new Chef(500, 360);
-        Player farther = new Player(660, 360);
-        Player nearer = new Player(620, 360);
-        ChefAI ai = new ChefAI(chef, ChefConfig.standard(150), map, burrow);
-
-        ai.update(1.0 / 60, List.of(farther, nearer));
-
-        check(ai.getTarget() == nearer, "when both are visible, nearest target should be selected");
     }
 
     private static void chefSearchesAndResumesWhenVisionReturns() {
@@ -90,17 +75,36 @@ public final class ChefIntegrationChecks {
         Player player = new Player(600, 360);
         ChefAI ai = new ChefAI(chef, ChefConfig.standard(150), map, burrow);
 
-        ai.update(1.0 / 60, List.of(player));
+        ai.update(1.0 / 60, player);
         check(ai.getState() == Chef.State.CHASING, "visible player should be chased");
         player.setPosition(1200, 360);
-        ai.update(1.0 / 60, List.of(player));
+        ai.update(1.0 / 60, player);
         check(ai.getState() == Chef.State.SEARCHING, "lost player should trigger bounded search");
         check(ai.getLastKnownPosition().equals(new Point2D(600, 360)),
                 "search should use only last observed position");
         player.setPosition(620, 360);
-        ai.update(1.0 / 60, List.of(player));
+        ai.update(1.0 / 60, player);
         check(ai.getState() == Chef.State.CHASING && ai.getTarget() == player,
                 "regained line of sight should resume pursuit");
+    }
+
+    private static void resettingChefAIStopsThePreviousPursuit() {
+        RestaurantMap map = new RestaurantMap();
+        Burrow burrow = new Burrow(160, 880, 38);
+        Chef chef = new Chef(500, 360);
+        Player player = new Player(600, 360);
+        ChefAI ai = new ChefAI(chef, ChefConfig.standard(player.getSpeed()), map, burrow);
+        ai.update(1.0 / 60, player);
+        check(ai.getTarget() == player, "Chef should have an active target before reset");
+
+        ai.reset();
+
+        check(ai.getTarget() == null && ai.getLastKnownPosition() == null,
+                "reset should clear the Chef's previous target and search position");
+        check(ai.getState() == Chef.State.RETURNING_TO_WORK
+                        && !chef.isMoving()
+                        && ai.getAttackSystem().getPhase() == AttackSystem.Phase.READY,
+                "reset should stop movement and clear any pending attack");
     }
 
     private static void broomAttackHasWindupAndSingleHit() {
@@ -114,20 +118,20 @@ public final class ChefIntegrationChecks {
 
         check(attack.begin(chef, target), "attack should start for a valid target");
         check(attack.getPhase() == AttackSystem.Phase.WINDUP, "attack must begin with windup");
-        attack.update(config.attackWindupSeconds(), chef, List.of(target), burrow,
+        attack.update(config.attackWindupSeconds(), chef, target, burrow,
                 player -> {
                     if (player.capture()) {
                         hits.incrementAndGet();
                     }
                 });
         check(attack.isStrikeActive(), "attack should expose an active strike window");
-        attack.update(0.05, chef, List.of(target), burrow,
+        attack.update(0.05, chef, target, burrow,
                 player -> {
                     if (player.capture()) {
                         hits.incrementAndGet();
                     }
                 });
-        attack.update(0.05, chef, List.of(target), burrow,
+        attack.update(0.05, chef, target, burrow,
                 player -> {
                     if (player.capture()) {
                         hits.incrementAndGet();
@@ -148,7 +152,7 @@ public final class ChefIntegrationChecks {
 
         check(attack.begin(chef, target), "a target in range should allow windup");
         target.setPosition(530, 535);
-        attack.update(config.attackWindupSeconds(), chef, List.of(target), burrow,
+        attack.update(config.attackWindupSeconds(), chef, target, burrow,
                 ignored -> hits.incrementAndGet());
 
         check(hits.get() == 0 && target.isActive(),
@@ -176,12 +180,13 @@ public final class ChefIntegrationChecks {
         Trap trap = new Trap("disabled-test", new Point2D(800, 600), 18,
                 Trap.State.DISABLED);
         Chef chef = new Chef(760, 600);
+        Player player = new Player(500, 600);
         Burrow burrow = new Burrow(160, 880, 38);
         ChefAI ai = new ChefAI(chef, ChefConfig.standard(150),
             new RestaurantMap(), burrow);
         trap.setActivationListener(ai::notifyTrapActivated);
         check(!trap.trigger(), "a disabled trap must not emit an activation event");
-        ai.update(0.1, List.of());
+        ai.update(0.1, player);
         check(!trap.isActive(), "inspection must not reactivate a disabled trap");
         check(ai.getState() != Chef.State.INSPECTING_TRAP,
             "disabled trap inspection must not be triggered by an activation event");

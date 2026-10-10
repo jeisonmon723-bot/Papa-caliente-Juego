@@ -34,19 +34,13 @@ public final class GameManager {
             Food.Type.MUSHROOM,
             Food.Type.CARROT);
 
-    public enum GameMode {
-        ONE_PLAYER,
-        TWO_PLAYERS
-    }
-
     public enum State {
         RUNNING,
         PAUSED,
         GAME_OVER
     }
 
-    private final Player firstPlayer;
-    private final Player secondPlayer;
+    private final Player player;
     private final Chef chef;
     private final Burrow burrow;
     private final RestaurantMap map;
@@ -54,46 +48,36 @@ public final class GameManager {
     private final List<FoodItem> floorFood = new ArrayList<>();
     private final Preferences preferences = Preferences.userNodeForPackage(GameManager.class);
 
-    private GameMode gameMode;
     private State state = State.RUNNING;
-    private Player burrowOwner;
-    private int nextOwnerIndex;
     private int score;
     private int highScore;
     private int completedBurrows;
     private double burrowSecondsRemaining = BURROW_DURATION_SECONDS;
-    private double potatoSpawnX;
-    private double potatoSpawnY;
     private HotPotato hotPotato;
     private FoodItem potatoPickup;
     private Player potatoHolder;
     private String alertMessage = "";
     private double alertSecondsRemaining;
 
-    public GameManager(GameMode gameMode, Player firstPlayer, Player secondPlayer,
-                       Chef chef, Burrow burrow, RestaurantMap map) {
-        this(gameMode, firstPlayer, secondPlayer, chef, burrow, map, new Random());
+    public GameManager(Player player, Chef chef, Burrow burrow, RestaurantMap map) {
+        this(player, chef, burrow, map, new Random());
     }
 
-    public GameManager(GameMode gameMode, Player firstPlayer, Player secondPlayer,
-                       Chef chef, Burrow burrow, RestaurantMap map, Random random) {
-        if (gameMode == null || firstPlayer == null || secondPlayer == null
-                || chef == null || burrow == null || map == null || random == null) {
+    public GameManager(Player player, Chef chef, Burrow burrow, RestaurantMap map,
+                       Random random) {
+        if (player == null || chef == null || burrow == null || map == null || random == null) {
             throw new IllegalArgumentException("GameManager requires a complete game setup");
         }
-        this.gameMode = gameMode;
-        this.firstPlayer = firstPlayer;
-        this.secondPlayer = secondPlayer;
+        this.player = player;
         this.chef = chef;
         this.burrow = burrow;
         this.map = map;
         this.random = random;
         highScore = preferences.getInt(HIGH_SCORE_KEY, 0);
-        startNewGame(gameMode);
+        resetGame();
     }
 
-    public void startNewGame(GameMode mode) {
-        gameMode = mode;
+    public void resetGame() {
         state = State.RUNNING;
         score = 0;
         completedBurrows = 0;
@@ -104,20 +88,14 @@ public final class GameManager {
         hotPotato = null;
         potatoPickup = null;
         floorFood.clear();
-        firstPlayer.resetForNewGame();
-        secondPlayer.resetForNewGame();
+        player.resetForNewGame();
         chef.resetForNewGame();
-        firstPlayer.setParticipating(true);
-        secondPlayer.setParticipating(false);
-        burrowOwner = firstPlayer;
-        nextOwnerIndex = 0;
+        map.reset();
         configureNextBurrow();
         spawnFloorFood();
         if (random.nextDouble() < HOT_POTATO_SPAWN_CHANCE) {
             hotPotato = new HotPotato();
             Point2D position = randomSafePosition(90);
-            potatoSpawnX = position.getX();
-            potatoSpawnY = position.getY();
             potatoPickup = new FoodItem(hotPotato, position);
         }
     }
@@ -126,7 +104,7 @@ public final class GameManager {
         if (state != State.RUNNING) {
             return;
         }
-        if (getActivePlayers().isEmpty()) {
+        if (!player.isActive()) {
             finishGame();
             return;
         }
@@ -147,13 +125,13 @@ public final class GameManager {
             failBurrow();
             return;
         }
-        if (getActivePlayers().isEmpty()) {
+        if (!player.isActive()) {
             finishGame();
         }
     }
 
     public void interact(Player player) {
-        if (state != State.RUNNING || player == null || !player.isActive()) {
+        if (state != State.RUNNING || player != this.player || !player.isActive()) {
             return;
         }
         if (player.getHeldFood() != null) {
@@ -164,7 +142,7 @@ public final class GameManager {
         if (distance(player, chef) <= CHEF_THEFT_RADIUS && chef.hasPreparedFood()) {
             Food stolenFood = chef.stealPreparedFood();
             player.holdFood(stolenFood);
-            showAlert(playerName(player) + " robó comida caliente al Chef", 2.2);
+            showAlert("El ratón robó comida caliente al Chef", 2.2);
             return;
         }
 
@@ -206,8 +184,8 @@ public final class GameManager {
         return burrow;
     }
 
-    public GameMode getGameMode() {
-        return gameMode;
+    public Player getPlayer() {
+        return player;
     }
 
     public State getState() {
@@ -228,18 +206,6 @@ public final class GameManager {
 
     public double getBurrowSecondsRemaining() {
         return burrowSecondsRemaining;
-    }
-
-    public Player getBurrowOwner() {
-        return burrowOwner;
-    }
-
-    public List<Player> getPlayers() {
-        return List.of(firstPlayer, secondPlayer);
-    }
-
-    public List<Player> getActivePlayers() {
-        return getPlayers().stream().filter(Player::isActive).toList();
     }
 
     public List<FoodItem> getAvailableFoodItems() {
@@ -339,11 +305,11 @@ public final class GameManager {
     }
 
     private void failBurrow() {
-        if (burrowOwner != null && burrowOwner.isActive()) {
-            burrowOwner.loseLife();
-            showAlert(playerName(burrowOwner) + " perdió una vida: cuota vencida", 2.5);
+        if (player.isActive()) {
+            player.loseLife();
+            showAlert("Perdiste una vida: cuota vencida", 2.5);
         }
-        if (getActivePlayers().isEmpty()) {
+        if (!player.isActive()) {
             finishGame();
             return;
         }
@@ -355,13 +321,6 @@ public final class GameManager {
         burrow.empty();
         Point2D location = randomSafePosition(120);
         burrow.resetAt(location.getX(), location.getY(), BURROW_QUOTA_POINTS);
-        List<Player> activePlayers = getActivePlayers();
-        if (activePlayers.isEmpty()) {
-            finishGame();
-            return;
-        }
-        burrowOwner = activePlayers.get(nextOwnerIndex % activePlayers.size());
-        nextOwnerIndex = (nextOwnerIndex + 1) % Math.max(1, activePlayers.size());
     }
 
     private void spawnFloorFood() {
@@ -425,7 +384,4 @@ public final class GameManager {
         return Math.hypot(player.getX() - target.getX(), player.getY() - target.getY());
     }
 
-    private String playerName(Player player) {
-        return player == firstPlayer ? "Ratón 1" : "Ratón 2";
-    }
 }

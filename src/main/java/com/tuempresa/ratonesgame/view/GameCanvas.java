@@ -65,7 +65,7 @@ public final class GameCanvas extends Canvas {
         getGraphicsContext2D().setImageSmoothing(true);
     }
 
-    public void render(Player firstPlayer, Player secondPlayer, Chef chef,
+    public void render(Player player, Chef chef,
                        Burrow burrow, Camera camera, RestaurantMap map,
                        AttackSystem attack, GameManager gameManager, boolean captured) {
         GraphicsContext graphics = getGraphicsContext2D();
@@ -83,13 +83,9 @@ public final class GameCanvas extends Canvas {
         drawBurrow(graphics, burrow);
         drawTraps(graphics, map.getTraps());
         drawFood(graphics, gameManager.getAvailableFoodItems());
-        if (firstPlayer.isActive() && !burrow.contains(firstPlayer)) {
-            drawPlayer(graphics, firstPlayer, Color.web("#42a69a"));
-            drawHeldFood(graphics, firstPlayer);
-        }
-        if (secondPlayer.isActive() && !burrow.contains(secondPlayer)) {
-            drawPlayer(graphics, secondPlayer, Color.web("#e2b84f"));
-            drawHeldFood(graphics, secondPlayer);
+        if (player.isActive() && !burrow.contains(player)) {
+            drawPlayer(graphics, player, Color.web("#42a69a"));
+            drawHeldFood(graphics, player);
         }
         drawChef(graphics, chef, attack);
         graphics.restore();

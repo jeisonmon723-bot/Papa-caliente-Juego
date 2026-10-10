@@ -80,6 +80,10 @@ public final class RestaurantMap {
         return patrolRoute;
     }
 
+    public void reset() {
+        traps.forEach(Trap::reset);
+    }
+
     public boolean canOccupy(double x, double y, double radius) {
         if (x - radius < 32 || y - radius < 32
                 || x + radius > WIDTH - 32 || y + radius > HEIGHT - 32) {

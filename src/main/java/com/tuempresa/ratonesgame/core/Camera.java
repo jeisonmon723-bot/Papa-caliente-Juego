@@ -44,6 +44,13 @@ public final class Camera {
         centerY += (desiredY - centerY) * blend;
     }
 
+    public void resetTo(Entity target) {
+        double halfViewWidth = viewportWidth / (2 * zoom);
+        double halfViewHeight = viewportHeight / (2 * zoom);
+        centerX = clamp(target.getX(), halfViewWidth, worldWidth - halfViewWidth);
+        centerY = clamp(target.getY(), halfViewHeight, worldHeight - halfViewHeight);
+    }
+
     public double getOffsetX() {
         return centerX - getViewportWidth() / 2;
     }
