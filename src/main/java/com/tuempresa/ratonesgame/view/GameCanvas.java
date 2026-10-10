@@ -24,6 +24,8 @@ public final class GameCanvas extends Canvas {
     private static final String SPRITE_ROOT = "/com/tuempresa/ratonesgame/sprites/";
     private static final String GAMEPLAY_ROOT = "/com/tuempresa/ratonesgame/assets/gameplay/";
     private static final int TILE_SIZE = 32;
+    public static final double VIEW_WIDTH = 1280;
+    public static final double VIEW_HEIGHT = 800;
     public static final double WORLD_WIDTH = 1920;
     public static final double WORLD_HEIGHT = 1080;
 
@@ -60,14 +62,14 @@ public final class GameCanvas extends Canvas {
         tilesSheet = resources.loadImage(GAMEPLAY_ROOT + "Tiles.png");
         cheeseIcon = resources.loadImage(GAMEPLAY_ROOT + "food/Cheese.png");
         loadFoodSprites(resources);
-        getGraphicsContext2D().setImageSmoothing(false);
+        getGraphicsContext2D().setImageSmoothing(true);
     }
 
     public void render(Player firstPlayer, Player secondPlayer, Chef chef,
                        Burrow burrow, Camera camera, RestaurantMap map,
                        AttackSystem attack, GameManager gameManager, boolean captured) {
         GraphicsContext graphics = getGraphicsContext2D();
-        graphics.setImageSmoothing(false);
+        graphics.setImageSmoothing(true);
         graphics.clearRect(0, 0, getWidth(), getHeight());
         double offsetX = camera.getOffsetX();
         double offsetY = camera.getOffsetY();

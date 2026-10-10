@@ -12,14 +12,16 @@ import com.tuempresa.ratonesgame.model.Burrow;
 import com.tuempresa.ratonesgame.model.Chef;
 import com.tuempresa.ratonesgame.model.Player;
 import com.tuempresa.ratonesgame.model.Trap;
+import com.tuempresa.ratonesgame.view.AspectRatioPane;
 import com.tuempresa.ratonesgame.view.GameCanvas;
 import com.tuempresa.ratonesgame.view.HUDView;
 import com.tuempresa.ratonesgame.world.RestaurantMap;
 import javafx.application.Application;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.input.KeyCode;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -45,9 +47,11 @@ public final class MainApp extends Application {
         onePlayer.setOnAction(event -> startGame(GameManager.GameMode.ONE_PLAYER));
         twoPlayers.setOnAction(event -> startGame(GameManager.GameMode.TWO_PLAYERS));
         VBox menu = new VBox(14, title, onePlayer, twoPlayers);
-        menu.setAlignment(javafx.geometry.Pos.CENTER);
+        menu.setAlignment(Pos.CENTER);
         menu.getStyleClass().add("menu-screen");
-        Scene scene = new Scene(menu, 960, 540);
+        StackPane menuScreen = new StackPane(menu);
+        Scene scene = new Scene(createViewport(menuScreen),
+                GameCanvas.VIEW_WIDTH, GameCanvas.VIEW_HEIGHT);
         addStylesheet(scene);
         stage.setScene(scene);
     }
@@ -60,10 +64,12 @@ public final class MainApp extends Application {
         RestaurantMap map = new RestaurantMap();
         GameManager gameManager = new GameManager(mode, firstPlayer, secondPlayer,
                 chef, burrow, map);
-        GameCanvas canvas = new GameCanvas(960, 540, resources);
+        GameCanvas canvas = new GameCanvas(
+                GameCanvas.VIEW_WIDTH, GameCanvas.VIEW_HEIGHT, resources);
         HUDView hud = new HUDView(firstPlayer, burrow, gameManager);
         InputController input = new InputController(firstPlayer, chef, gameManager);
-        Camera camera = new Camera(960, 540, GameCanvas.WORLD_WIDTH,
+        Camera camera = new Camera(GameCanvas.VIEW_WIDTH, GameCanvas.VIEW_HEIGHT,
+                GameCanvas.WORLD_WIDTH,
                 GameCanvas.WORLD_HEIGHT, 5.5);
         AudioManager audioManager = new AudioManager();
         ChefConfig chefConfig = ChefConfig.standard(firstPlayer.getSpeed());
@@ -76,7 +82,8 @@ public final class MainApp extends Application {
 
         StackPane root = new StackPane(canvas, hud);
         root.setFocusTraversable(true);
-        Scene scene = new Scene(root, 960, 540);
+        Scene scene = new Scene(createViewport(root),
+                GameCanvas.VIEW_WIDTH, GameCanvas.VIEW_HEIGHT);
         scene.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ESCAPE) {
                 engine.togglePause();
@@ -99,6 +106,10 @@ public final class MainApp extends Application {
         if (stylesheet != null) {
             scene.getStylesheets().add(stylesheet.toExternalForm());
         }
+    }
+
+    private AspectRatioPane createViewport(StackPane content) {
+        return new AspectRatioPane(content, GameCanvas.VIEW_WIDTH, GameCanvas.VIEW_HEIGHT);
     }
 
     @Override
