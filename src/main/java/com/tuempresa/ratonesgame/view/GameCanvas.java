@@ -25,7 +25,6 @@ public final class GameCanvas extends Canvas {
 
     private final Image mouseIdle;
     private final Image mouseRun;
-    private final LightingSystem lightingSystem = new LightingSystem();
 
     public GameCanvas(double width, double height, ResourceManager resources) {
         super(width, height);
@@ -44,6 +43,8 @@ public final class GameCanvas extends Canvas {
         double offsetY = camera.getOffsetY();
 
         graphics.save();
+        // Scale only the world layer so the HUD remains full-size and readable.
+        graphics.scale(camera.getZoom(), camera.getZoom());
         graphics.translate(-offsetX, -offsetY);
         drawKitchen(graphics, offsetX, offsetY, camera.getViewportWidth(), camera.getViewportHeight());
         drawRestaurantZones(graphics);
@@ -61,8 +62,7 @@ public final class GameCanvas extends Canvas {
         drawChef(graphics, chef, attack);
         graphics.restore();
 
-        boolean hidden = burrow.contains(firstPlayer) || burrow.contains(secondPlayer);
-        lightingSystem.render(graphics, getWidth(), getHeight(), camera, hidden);
+        // The scene stays fully lit; no vignette or darkness overlay is applied.
         if (captured) {
             graphics.setFill(Color.rgb(135, 18, 25, 0.3));
             graphics.fillRect(0, 0, getWidth(), getHeight());
@@ -71,7 +71,7 @@ public final class GameCanvas extends Canvas {
 
     private void drawKitchen(GraphicsContext graphics, double offsetX, double offsetY,
                              double viewportWidth, double viewportHeight) {
-        graphics.setFill(Color.web("#80664a"));
+        graphics.setFill(Color.web("#d7b987"));
         graphics.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
         int firstColumn = Math.max(0, (int) (offsetX / TILE_SIZE));
         int lastColumn = Math.min((int) (WORLD_WIDTH / TILE_SIZE),
@@ -82,45 +82,207 @@ public final class GameCanvas extends Canvas {
         for (int row = firstRow; row < lastRow; row++) {
             for (int column = firstColumn; column < lastColumn; column++) {
                 graphics.setFill((row + column) % 2 == 0
-                        ? Color.web("#9b7958")
-                        : Color.web("#8d6e50"));
+                        ? Color.web("#e4cda5")
+                        : Color.web("#ddc397"));
                 graphics.fillRect(column * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                graphics.setStroke(Color.rgb(157, 116, 69, 0.18));
+                graphics.setLineWidth(1);
+                graphics.strokeLine(column * TILE_SIZE + 4, row * TILE_SIZE + 28,
+                        column * TILE_SIZE + 27, row * TILE_SIZE + 28);
             }
         }
-        graphics.setFill(Color.web("#594333"));
+        graphics.setFill(Color.web("#f1dfbd"));
+        graphics.fillRect(32, 32, WORLD_WIDTH - 64, 96);
+        graphics.setStroke(Color.web("#c99c62"));
+        graphics.setLineWidth(2);
+        for (int x = 40; x < WORLD_WIDTH - 32; x += 40) {
+            graphics.strokeLine(x, 36, x, 124);
+        }
+        graphics.setFill(Color.web("#8f573b"));
+        for (int x = 48; x < WORLD_WIDTH - 64; x += 80) {
+            graphics.fillRect(x, 52, 32, 4);
+            graphics.fillRect(x + 40, 78, 32, 4);
+            graphics.fillRect(x, 104, 32, 4);
+        }
+        drawWallDecor(graphics);
+        graphics.setFill(Color.web("#76523a"));
         graphics.fillRect(0, 0, WORLD_WIDTH, 32);
         graphics.fillRect(0, 32, 32, WORLD_HEIGHT - 32);
         graphics.fillRect(WORLD_WIDTH - 32, 32, 32, WORLD_HEIGHT - 32);
         graphics.fillRect(0, WORLD_HEIGHT - 32, WORLD_WIDTH, 32);
+        graphics.setFill(Color.web("#a86f43"));
         graphics.fillRect(0, 128, WORLD_WIDTH, 48);
-        graphics.setFill(Color.web("#c0955e"));
+        graphics.setFill(Color.web("#f0d49e"));
         graphics.fillRect(0, 128, WORLD_WIDTH, 8);
+        graphics.setFill(Color.web("#c18a50"));
+        graphics.fillRect(0, 169, WORLD_WIDTH, 7);
     }
 
     private void drawRestaurantZones(GraphicsContext graphics) {
-        drawZoneLabel(graphics, "COCINA", 470, 88, Color.web("#f0dfbd"));
-        graphics.setFill(Color.web("#594333"));
+        drawZoneLabel(graphics, "COCINA", 470, 88, Color.web("#70452f"));
+        graphics.setFill(Color.web("#e8d4ad"));
+        graphics.fillRect(320, 177, 360, 53);
+        graphics.setStroke(Color.web("#c99b61"));
+        graphics.setLineWidth(2);
+        for (int x = 324; x < 680; x += 24) {
+            graphics.strokeLine(x, 178, x, 229);
+        }
+        for (int y = 181; y < 230; y += 17) {
+            graphics.strokeLine(320, y, 680, y);
+        }
+        drawKitchenUtensils(graphics);
+        graphics.setFill(Color.web("#795039"));
         graphics.fillRect(320, 230, 360, 74);
-        graphics.setFill(Color.web("#c0955e"));
-        graphics.fillRect(320, 230, 360, 12);
-        graphics.setFill(Color.web("#715038"));
-        graphics.fillRect(382, 236, 236, 56);
+        graphics.setFill(Color.web("#f1d49d"));
+        graphics.fillRect(320, 230, 360, 13);
+        graphics.setFill(Color.web("#986a43"));
+        graphics.fillRect(326, 243, 348, 53);
+        drawKitchenWorktop(graphics);
 
-        drawZoneLabel(graphics, "MESAS FAMILIARES", 1010, 85, Color.web("#f0dfbd"));
+        drawZoneLabel(graphics, "MESAS FAMILIARES", 1010, 85, Color.web("#70452f"));
+        drawWallShelf(graphics, 1080, 188, 190);
+        drawDiner(graphics, 955, 229, Color.web("#668b78"), Color.web("#d89a63"));
+        drawDiner(graphics, 1009, 229, Color.web("#7a7898"), Color.web("#d7a078"));
+        drawDiner(graphics, 1265, 229, Color.web("#9a6657"), Color.web("#e1b17d"));
+        drawDiner(graphics, 1319, 229, Color.web("#6c8790"), Color.web("#c98562"));
+        drawDiner(graphics, 955, 429, Color.web("#8b7651"), Color.web("#dca477"));
+        drawDiner(graphics, 1009, 429, Color.web("#638779"), Color.web("#e2b17e"));
+        drawDiner(graphics, 1265, 429, Color.web("#7d6d91"), Color.web("#d49b71"));
+        drawDiner(graphics, 1319, 429, Color.web("#a66d52"), Color.web("#e5b585"));
         drawTable(graphics, 940, 245);
         drawTable(graphics, 1250, 245);
         drawTable(graphics, 940, 445);
         drawTable(graphics, 1250, 445);
 
-        drawZoneLabel(graphics, "CHIMENEA", 1555, 85, Color.web("#f1d7ad"));
+        drawZoneLabel(graphics, "CHIMENEA", 1555, 85, Color.web("#70452f"));
         graphics.setFill(Color.web("#5e4030"));
         graphics.fillRect(1570, 135, 190, 76);
-        graphics.setFill(Color.web("#bc623c"));
-        graphics.fillRect(1590, 151, 150, 44);
-        graphics.setFill(Color.web("#f0a249"));
-        graphics.fillOval(1640, 158, 34, 34);
+        graphics.setFill(Color.web("#c58a52"));
+        graphics.fillRect(1581, 142, 168, 59);
+        graphics.setFill(Color.web("#713f2e"));
+        graphics.fillRoundRect(1592, 151, 146, 47, 8, 8);
+        graphics.setFill(Color.web("#f2a84f"));
+        graphics.fillOval(1627, 160, 35, 32);
+        graphics.setFill(Color.web("#ffd77b"));
+        graphics.fillOval(1641, 154, 27, 38);
+        graphics.setFill(Color.web("#fff0b4"));
+        graphics.fillOval(1652, 162, 12, 25);
+        drawWallShelf(graphics, 1390, 188, 126);
 
-        drawZoneLabel(graphics, "MADRIGUERAS", 470, 745, Color.web("#e2c9a6"));
+        drawZoneLabel(graphics, "MADRIGUERAS", 470, 745, Color.web("#70452f"));
+    }
+
+    private void drawWallDecor(GraphicsContext graphics) {
+        drawWallFrame(graphics, 95, 52, Color.web("#8f6548"), Color.web("#71917d"));
+        drawWallFrame(graphics, 750, 52, Color.web("#95613f"), Color.web("#d29a58"));
+        drawWallFrame(graphics, 1420, 52, Color.web("#805b43"), Color.web("#8095a1"));
+        drawWallFrame(graphics, 1780, 52, Color.web("#95613f"), Color.web("#a06c50"));
+        graphics.setFill(Color.web("#a66c41"));
+        graphics.fillRect(790, 113, 310, 9);
+        graphics.setFill(Color.web("#e0b86f"));
+        for (int x = 810; x < 1088; x += 46) {
+            graphics.fillOval(x, 96, 22, 17);
+            graphics.setFill(Color.web("#709071"));
+            graphics.fillOval(x + 6, 91, 8, 8);
+            graphics.setFill(Color.web("#e0b86f"));
+        }
+    }
+
+    private void drawWallFrame(GraphicsContext graphics, double x, double y,
+                               Color frame, Color artwork) {
+        graphics.setFill(Color.web("#805337"));
+        graphics.fillRoundRect(x - 3, y - 3, 54, 57, 4, 4);
+        graphics.setFill(frame);
+        graphics.fillRect(x, y, 48, 51);
+        graphics.setFill(Color.web("#fff0d3"));
+        graphics.fillRect(x + 4, y + 4, 40, 43);
+        graphics.setFill(artwork);
+        graphics.fillOval(x + 10, y + 12, 28, 26);
+        graphics.setFill(Color.web("#f4d58b"));
+        graphics.fillOval(x + 17, y + 17, 14, 15);
+    }
+
+    private void drawKitchenUtensils(GraphicsContext graphics) {
+        graphics.setStroke(Color.web("#80573c"));
+        graphics.setLineWidth(3);
+        graphics.strokeLine(345, 190, 655, 190);
+        for (int x : new int[]{365, 405, 445, 565, 605, 645}) {
+            graphics.setStroke(Color.web("#986747"));
+            graphics.setLineWidth(2);
+            graphics.strokeLine(x, 190, x, 207);
+            graphics.setFill(Color.web("#d9e0d7"));
+            graphics.fillOval(x - 5, 203, 10, 13);
+            graphics.setStroke(Color.web("#986747"));
+            graphics.strokeLine(x - 4, 211, x + 4, 211);
+        }
+        graphics.setFill(Color.web("#d7ded6"));
+        graphics.fillOval(476, 188, 29, 29);
+        graphics.setFill(Color.web("#aa7048"));
+        graphics.fillOval(482, 194, 17, 17);
+        graphics.setFill(Color.web("#e6e0cf"));
+        graphics.fillRect(521, 190, 8, 26);
+        graphics.setFill(Color.web("#bd8050"));
+        graphics.fillOval(517, 185, 16, 9);
+    }
+
+    private void drawKitchenWorktop(GraphicsContext graphics) {
+        graphics.setFill(Color.web("#e9ddc4"));
+        graphics.fillRoundRect(345, 246, 92, 43, 5, 5);
+        graphics.setFill(Color.web("#d8c8a7"));
+        graphics.fillRect(353, 253, 76, 5);
+        graphics.setFill(Color.web("#f5efe0"));
+        graphics.fillOval(369, 262, 39, 19);
+        graphics.setFill(Color.web("#d49a55"));
+        graphics.fillOval(380, 268, 17, 8);
+        graphics.setFill(Color.web("#e7dfcd"));
+        graphics.fillRoundRect(456, 250, 74, 36, 6, 6);
+        graphics.setFill(Color.web("#55514a"));
+        for (int x : new int[]{468, 495, 521}) {
+            graphics.fillOval(x, 254, 12, 12);
+            graphics.setFill(Color.web("#d9cbb0"));
+            graphics.fillOval(x + 3, 257, 6, 6);
+            graphics.setFill(Color.web("#55514a"));
+        }
+        graphics.setFill(Color.web("#f4eee0"));
+        graphics.fillOval(552, 254, 28, 18);
+        graphics.fillOval(585, 254, 28, 18);
+        graphics.setFill(Color.web("#d8a55e"));
+        graphics.fillOval(559, 259, 13, 8);
+        graphics.setFill(Color.web("#92a78a"));
+        graphics.fillOval(592, 259, 13, 8);
+        graphics.setFill(Color.web("#c6a77d"));
+        graphics.fillRect(635, 250, 23, 35);
+        graphics.setFill(Color.web("#f2e6ce"));
+        graphics.fillRect(638, 246, 17, 7);
+    }
+
+    private void drawWallShelf(GraphicsContext graphics, double x, double y, double width) {
+        graphics.setFill(Color.web("#97623d"));
+        graphics.fillRect(x, y + 25, width, 7);
+        graphics.setFill(Color.web("#c89456"));
+        graphics.fillRect(x, y + 32, width, 4);
+        for (int item = 0; item < 4; item++) {
+            double itemX = x + 12 + item * (width - 36) / 3;
+            graphics.setFill(item % 2 == 0 ? Color.web("#efe2c5") : Color.web("#9cae9c"));
+            graphics.fillRoundRect(itemX, y + 7, 21, 18, 5, 5);
+            graphics.setFill(Color.web("#d2bb93"));
+            graphics.fillOval(itemX + 4, y + 5, 13, 5);
+        }
+    }
+
+    private void drawDiner(GraphicsContext graphics, double x, double y,
+                           Color clothing, Color skin) {
+        graphics.setFill(Color.rgb(79, 55, 38, 0.2));
+        graphics.fillOval(x - 12, y + 5, 25, 8);
+        graphics.setFill(clothing);
+        graphics.fillRoundRect(x - 10, y - 1, 20, 19, 7, 7);
+        graphics.setFill(skin);
+        graphics.fillOval(x - 8, y - 14, 16, 16);
+        graphics.setFill(Color.web("#584337"));
+        graphics.fillOval(x - 9, y - 16, 18, 8);
+        graphics.setFill(Color.web("#fff3d9"));
+        graphics.fillOval(x - 4, y - 8, 2, 2);
+        graphics.fillOval(x + 3, y - 8, 2, 2);
     }
 
     private void drawZoneLabel(GraphicsContext graphics, String label,
@@ -130,6 +292,10 @@ public final class GameCanvas extends Canvas {
     }
 
     private void drawTable(GraphicsContext graphics, double x, double y) {
+        drawChair(graphics, x + 4, y + 20);
+        drawChair(graphics, x + 70, y + 20);
+        drawChair(graphics, x + 4, y + 48);
+        drawChair(graphics, x + 70, y + 48);
         graphics.setFill(Color.web("#543a2b"));
         graphics.fillRect(x + 10, y + 12, 72, 10);
         graphics.fillRect(x + 15, y + 57, 62, 9);
@@ -137,8 +303,28 @@ public final class GameCanvas extends Canvas {
         graphics.fillRoundRect(x, y, 92, 68, 8, 8);
         graphics.setFill(Color.web("#d1a36c"));
         graphics.fillRoundRect(x + 5, y + 5, 82, 58, 6, 6);
+        graphics.setFill(Color.web("#f1e5cd"));
+        graphics.fillRoundRect(x + 10, y + 9, 72, 48, 5, 5);
+        graphics.setStroke(Color.web("#d6c6a9"));
+        graphics.setLineWidth(1);
+        graphics.strokeLine(x + 46, y + 11, x + 46, y + 55);
+        graphics.strokeLine(x + 12, y + 33, x + 80, y + 33);
         graphics.setFill(Color.web("#f0dfbd"));
-        graphics.fillOval(x + 38, y + 25, 16, 16);
+        graphics.fillOval(x + 34, y + 20, 23, 23);
+        graphics.setFill(Color.web("#f7f4e9"));
+        graphics.fillOval(x + 17, y + 20, 12, 12);
+        graphics.fillOval(x + 64, y + 37, 12, 12);
+        graphics.setFill(Color.web("#d89a53"));
+        graphics.fillOval(x + 41, y + 27, 10, 10);
+        graphics.setFill(Color.web("#8caa79"));
+        graphics.fillOval(x + 46, y + 25, 5, 4);
+    }
+
+    private void drawChair(GraphicsContext graphics, double x, double y) {
+        graphics.setFill(Color.web("#795035"));
+        graphics.fillRoundRect(x, y, 17, 14, 4, 4);
+        graphics.setFill(Color.web("#bd8951"));
+        graphics.fillRoundRect(x + 2, y + 2, 13, 10, 3, 3);
     }
 
     private void drawFood(GraphicsContext graphics, java.util.List<FoodItem> foodItems) {
@@ -193,12 +379,45 @@ public final class GameCanvas extends Canvas {
         double x = burrow.getX();
         double y = burrow.getY();
         double radius = burrow.getRadius();
-        graphics.setFill(Color.web("#493628"));
-        graphics.fillOval(x - radius, y - radius * 0.55, radius * 2, radius * 1.1);
-        graphics.setStroke(Color.web("#c79b65"));
+        graphics.setFill(Color.rgb(248, 218, 166, 0.32));
+        graphics.fillOval(x - radius - 18, y - radius * 0.8 - 12,
+                radius * 2 + 36, radius * 1.6 + 24);
+        graphics.setFill(Color.web("#a9794d"));
+        graphics.fillOval(x - radius - 6, y - radius * 0.62 - 3,
+                radius * 2 + 12, radius * 1.24 + 6);
+        graphics.setFill(Color.web("#60402f"));
+        graphics.fillOval(x - radius, y - radius * 0.52,
+                radius * 2, radius * 1.04);
+        graphics.setFill(Color.web("#b78045"));
+        graphics.fillOval(x - radius * 0.63, y - radius * 0.35,
+                radius * 1.26, radius * 0.5);
+        graphics.setFill(Color.web("#f2d38f"));
+        graphics.fillOval(x - radius * 0.43, y - radius * 0.22,
+                radius * 0.86, radius * 0.23);
+        graphics.setStroke(Color.web("#d6a968"));
         graphics.setLineWidth(6);
-        graphics.strokeArc(x - radius - 3, y - radius * 0.65,
-                radius * 2 + 6, radius * 1.3, 0, 180, ArcType.OPEN);
+        graphics.strokeArc(x - radius - 5, y - radius * 0.7,
+                radius * 2 + 10, radius * 1.4, 0, 180, ArcType.OPEN);
+        graphics.setStroke(Color.web("#9a6a42"));
+        graphics.setLineWidth(3);
+        graphics.strokeArc(x - radius * 0.75, y - radius * 0.53,
+                radius * 1.5, radius, 0, 180, ArcType.OPEN);
+
+        double progress = burrow.getFillPercent();
+        if (progress > 0) {
+            // Delivered food contributes at least 1%, matching the minimum food-point value.
+            double barWidth = 90;
+            double barX = x - barWidth / 2;
+            double barY = y + radius * 0.72;
+            graphics.setFill(Color.web("#fff8e9"));
+            graphics.fillRoundRect(barX - 3, barY - 3, barWidth + 6, 20, 8, 8);
+            graphics.setFill(Color.web("#76523a"));
+            graphics.fillRoundRect(barX, barY, barWidth, 14, 6, 6);
+            graphics.setFill(Color.web("#73a66b"));
+            graphics.fillRoundRect(barX, barY, barWidth * progress / 100, 14, 6, 6);
+            graphics.setFill(Color.web("#fff8e9"));
+            graphics.fillText(String.format("%.0f%%", progress), x - 12, barY - 6);
+        }
     }
 
     private void drawTraps(GraphicsContext graphics, java.util.List<Trap> traps) {

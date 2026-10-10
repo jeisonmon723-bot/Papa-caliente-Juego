@@ -23,6 +23,8 @@ public final class HUDView extends StackPane {
     private final Label burrowStatus = new Label();
     private final Label potatoStatus = new Label();
     private final Label alertStatus = new Label();
+    private final Label firstControls = new Label();
+    private final Label secondControls = new Label();
     private final ProgressBar burrowProgress = new ProgressBar();
     private final ProgressBar firstHealth = new ProgressBar();
     private final ProgressBar secondHealth = new ProgressBar();
@@ -35,17 +37,20 @@ public final class HUDView extends StackPane {
         this.secondPlayer = secondPlayer;
         this.burrow = burrow;
         this.gameManager = gameManager;
-        VBox statusPanel = new VBox(6, firstPlayerStatus, secondPlayerStatus,
+        VBox statusPanel = new VBox(8, firstPlayerStatus, secondPlayerStatus,
                 roundTimer, scoreStatus, healthStatus, firstHealth, secondHealth,
-                burrowStatus, burrowProgress, potatoStatus, alertStatus);
-        statusPanel.setPadding(new Insets(12));
+                burrowStatus, burrowProgress, potatoStatus, alertStatus,
+                firstControls, secondControls);
+        statusPanel.setPadding(new Insets(18));
         statusPanel.getStyleClass().add("hud");
         StackPane.setAlignment(statusPanel, Pos.TOP_LEFT);
-        burrowProgress.setPrefWidth(220);
-        firstHealth.setPrefWidth(220);
-        secondHealth.setPrefWidth(220);
+        burrowProgress.setPrefWidth(280);
+        firstHealth.setPrefWidth(280);
+        secondHealth.setPrefWidth(280);
         firstHealth.getStyleClass().add("health-bar");
         secondHealth.getStyleClass().add("health-bar");
+        firstControls.getStyleClass().add("controls-hint");
+        secondControls.getStyleClass().add("controls-hint");
         captureLabel.getStyleClass().add("capture-label");
         captureOverlay.getStyleClass().add("capture-overlay");
         captureOverlay.getChildren().add(captureLabel);
@@ -90,6 +95,17 @@ public final class HUDView extends StackPane {
         }
         alertStatus.setText(gameManager.isAlertVisible() ? gameManager.getAlertMessage() : "");
         alertStatus.setVisible(gameManager.isAlertVisible());
+        firstControls.setText("E: " + interactionHint(firstPlayer));
+        secondControls.setText("ENTER: " + interactionHint(secondPlayer));
+        secondControls.setVisible(secondPlayer.isParticipating());
+        secondControls.setManaged(secondPlayer.isParticipating());
+    }
+
+    // E and Enter pick up food, then release it into the burrow when close enough.
+    private String interactionHint(Player player) {
+        return player.getHeldFood() == null
+                ? "Agarrar comida"
+                : "Soltar comida en la madriguera";
     }
 
     private String playerStatus(String name, Player player) {

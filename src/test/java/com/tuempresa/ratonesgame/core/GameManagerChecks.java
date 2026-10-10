@@ -30,7 +30,9 @@ public final class GameManagerChecks {
         hotFoodDamageStartsAfterFiveSeconds();
         hotPotatoFuseExplodesAfterThirtySeconds();
         hotPotatoDeliveryCompletesTheBurrow();
-        System.out.println("Game manager checks passed (12)");
+        carriedFoodSlowsPlayerByPortionSize();
+        cameraUsesZoomedViewport();
+        System.out.println("Game manager checks passed (14)");
     }
 
     private static void supportsOneAndTwoPlayerModes() {
@@ -182,6 +184,33 @@ public final class GameManagerChecks {
         check(manager.getCompletedBurrows() == 1 && manager.getScore() == 1,
                 "delivering a live potato should instantly complete the burrow");
         check(player.getHeldFood() == null, "delivered potato should be removed from the player");
+    }
+
+    private static void carriedFoodSlowsPlayerByPortionSize() {
+        Player player = new Player(100, 100);
+        player.setVelocity(1, 0);
+        check(Math.abs(player.getVelocityX() - player.getSpeed()) < 0.01,
+                "unladen player should move at full speed");
+
+        player.holdFood(new Food(Food.Type.CHEESE, 20, 15, false));
+        check(Math.abs(player.getVelocityX() - player.getSpeed() * 0.55) < 0.01,
+                "large portion should apply the maximum proportional speed penalty");
+
+        player.holdFood(new Food(Food.Type.BREAD, 20, 3, false));
+        check(player.getVelocityX() > player.getSpeed() * 0.55
+                        && player.getVelocityX() < player.getSpeed(),
+                "small portion should apply a smaller speed penalty");
+
+        player.releaseFood();
+        check(Math.abs(player.getVelocityX() - player.getSpeed()) < 0.01,
+                "releasing food should restore full movement speed");
+    }
+
+    private static void cameraUsesZoomedViewport() {
+        Camera camera = new Camera(960, 540, 1920, 1080, 5.5);
+        check(camera.getZoom() == 2, "camera should start with a 2x zoom");
+        check(camera.getViewportWidth() == 480 && camera.getViewportHeight() == 270,
+                "zoom should halve the visible world dimensions");
     }
 
     private static GameManager managerWithHotPotato(long startingSeed) {

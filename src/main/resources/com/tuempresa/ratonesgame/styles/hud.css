@@ -1,19 +1,20 @@
 .hud {
-    -fx-background-color: rgba(43, 34, 27, 0.88);
-    -fx-background-radius: 4;
-    -fx-border-color: #d0a66c;
-    -fx-border-width: 2;
-    -fx-border-radius: 4;
+    -fx-background-color: rgba(43, 34, 27, 0.94);
+    -fx-background-radius: 8;
+    -fx-border-color: #e1ba7d;
+    -fx-border-width: 3;
+    -fx-border-radius: 8;
 }
 
 .hud .label {
     -fx-text-fill: #f2e7cf;
     -fx-font-family: "Georgia";
-    -fx-font-size: 14px;
+    -fx-font-size: 18px;
 }
 
 .hud .progress-bar {
     -fx-accent: #84a05b;
+    -fx-pref-height: 18px;
 }
 
 .hud .health-bar {
@@ -22,6 +23,11 @@
 
 .hud .label {
     -fx-text-fill: #f2e7cf;
+}
+
+.hud .controls-hint {
+    -fx-text-fill: #ffe2a6;
+    -fx-font-weight: bold;
 }
 
 .menu-screen {

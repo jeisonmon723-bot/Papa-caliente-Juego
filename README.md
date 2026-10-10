@@ -39,7 +39,7 @@ Players start with 3 lives and 100 health. Holding a hot plate gives 5 seconds o
 
 ## Behavior Checks
 
-The standalone check runners (no JUnit dependency) cover directional/occluded vision, pathfinding around furniture, active/nearest target selection, searching and reacquiring, valid and missed broom attacks, pursuit-only burrow emptying, trap events, 1P/2P setup, player reset, all eight Chef dishes, food quota delivery, timeout/life loss/Game Over, paused timers, hot-food damage timing, hot-potato fuse/delivery, and non-duplicating food respawns.
+The standalone check runners (no JUnit dependency) cover directional/occluded vision, pathfinding around furniture, active/nearest target selection, searching and reacquiring, valid and missed broom attacks, pursuit-only burrow emptying, trap events, 1P/2P setup, player reset, all eight Chef dishes, food quota delivery, timeout/life loss/Game Over, paused timers, hot-food damage timing, hot-potato fuse/delivery, non-duplicating food respawns, carrying-weight speed penalties, and camera zoom.
 
 ```powershell
 mvn test-compile dependency:build-classpath "-Dmdep.outputFile=target/test-classpath.txt"
@@ -48,4 +48,4 @@ java -cp $classpath com.tuempresa.ratonesgame.core.ChefIntegrationChecks
 java -cp $classpath com.tuempresa.ratonesgame.core.GameManagerChecks
 ```
 
-The prototype includes a 1920 x 1080 restaurant world shown through a smooth camera viewport, radial warm lights, a safe burrow, chef proximity/chase audio, and a capture overlay. Sound clips are synthesized as temporary WAV files at startup because no sound assets are included yet.
+The prototype includes a 1920 x 1080 restaurant world shown through a smooth, zoomed camera viewport, bright uniform lighting, a safe burrow with a delivery progress bar, chef proximity/chase audio, and a capture overlay. Food portion size affects player movement speed, and the HUD shows the pickup/delivery controls. Sound clips are synthesized as temporary WAV files at startup because no sound assets are included yet.

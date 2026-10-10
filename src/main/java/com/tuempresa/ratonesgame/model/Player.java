@@ -4,6 +4,7 @@ public final class Player extends Entity {
     private static final double MAX_HEAT = 100;
     private static final double HOT_FOOD_GRACE_SECONDS = 5;
     private static final double HOT_FOOD_DAMAGE_PER_SECOND = 5;
+    private static final double MAX_CARRY_SPEED_PENALTY = 0.45;
 
     private int lives = 3;
     private double health = MAX_HEAT;
@@ -11,20 +12,24 @@ public final class Player extends Entity {
     private boolean active = true;
     private boolean participating = true;
     private double hotFoodHoldSeconds;
+    private double requestedMovementSpeed;
 
     public Player(double x, double y) {
         super(x, y, 150);
+        requestedMovementSpeed = getSpeed();
     }
 
     public void holdFood(Food food) {
         heldFood = food;
         hotFoodHoldSeconds = 0;
+        updateCarryingSpeed();
     }
 
     public Food releaseFood() {
         Food food = heldFood;
         heldFood = null;
         hotFoodHoldSeconds = 0;
+        updateCarryingSpeed();
         return food;
     }
 
@@ -96,6 +101,7 @@ public final class Player extends Entity {
         health = MAX_HEAT;
         heldFood = null;
         hotFoodHoldSeconds = 0;
+        updateCarryingSpeed();
         if (lives == 0) {
             active = false;
             super.setVelocity(0, 0, 0);
@@ -126,19 +132,36 @@ public final class Player extends Entity {
 
     @Override
     public void setVelocity(double directionX, double directionY) {
-        if (!isActive()) {
-            super.setVelocity(0, 0, 0);
-            return;
-        }
-        super.setVelocity(directionX, directionY);
+        setVelocity(directionX, directionY, getSpeed());
     }
 
     @Override
     public void setVelocity(double directionX, double directionY, double movementSpeed) {
-        if (!active) {
+        if (!isActive()) {
             super.setVelocity(0, 0, 0);
             return;
         }
-        super.setVelocity(directionX, directionY, movementSpeed);
+        super.setVelocity(directionX, directionY,
+                movementSpeed * carryingSpeedMultiplier());
+        requestedMovementSpeed = movementSpeed;
     }
+
+    private void updateCarryingSpeed() {
+        double velocityX = getVelocityX();
+        double velocityY = getVelocityY();
+        if (velocityX != 0 || velocityY != 0) {
+            super.setVelocity(velocityX, velocityY,
+                    requestedMovementSpeed * carryingSpeedMultiplier());
+        }
+    }
+
+    // Food points represent the portion size; larger portions slow the mouse proportionally.
+    private double carryingSpeedMultiplier() {
+        if (heldFood == null) {
+            return 1;
+        }
+        double portionSize = heldFood.getFoodPoints() / 15.0;
+        return 1 - Math.min(1, portionSize) * MAX_CARRY_SPEED_PENALTY;
+    }
+
 }
