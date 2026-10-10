@@ -4,10 +4,18 @@
 
 ## Run
 
-Install Maven, then run from the repository root:
+Install Java 17, then run from the repository root. The Maven Wrapper downloads
+and runs the required Maven version automatically (an internet connection is
+needed the first time):
 
 ```powershell
-mvn javafx:run
+.\mvnw.cmd javafx:run
+```
+
+On macOS or Linux, use:
+
+```sh
+./mvnw javafx:run
 ```
 
 Player 1 uses WASD. Player 2 uses the arrow keys.
@@ -42,7 +50,7 @@ Players start with 3 lives and 100 health. Holding a hot plate gives 5 seconds o
 The standalone check runners (no JUnit dependency) cover directional/occluded vision, pathfinding around furniture, active/nearest target selection, searching and reacquiring, valid and missed broom attacks, pursuit-only burrow emptying, trap events, 1P/2P setup, player reset, all eight Chef dishes, food quota delivery, timeout/life loss/Game Over, paused timers, hot-food damage timing, hot-potato fuse/delivery, non-duplicating food respawns, carrying-weight speed penalties, and camera zoom.
 
 ```powershell
-mvn test-compile dependency:build-classpath "-Dmdep.outputFile=target/test-classpath.txt"
+.\mvnw.cmd test-compile dependency:build-classpath "-Dmdep.outputFile=target/test-classpath.txt"
 $classpath = "target/classes;target/test-classes;$((Get-Content target/test-classpath.txt -Raw).Trim())"
 java -cp $classpath com.tuempresa.ratonesgame.core.ChefIntegrationChecks
 java -cp $classpath com.tuempresa.ratonesgame.core.GameManagerChecks
