@@ -7,6 +7,7 @@ import com.tuempresa.ratonesgame.model.Food;
 import com.tuempresa.ratonesgame.model.FoodItem;
 import com.tuempresa.ratonesgame.model.HotPotato;
 import com.tuempresa.ratonesgame.model.Player;
+import com.tuempresa.ratonesgame.model.Trap;
 import com.tuempresa.ratonesgame.world.RestaurantMap;
 import javafx.geometry.Point2D;
 
@@ -21,8 +22,7 @@ public final class GameManagerChecks {
     }
 
     public static void main(String[] args) {
-        supportsOneAndTwoPlayerModes();
-        mouseAndChefControlsWorkSimultaneously();
+        gameUsesOnlyMouseControls();
         newGameRestoresPlayerAndChefState();
         spawnsEightFoodTypesAndCapsTheirValue();
         chefCyclesThroughEightHotDishes();
@@ -36,30 +36,15 @@ public final class GameManagerChecks {
         hotPotatoDeliveryCompletesTheBurrow();
         carriedFoodSlowsPlayerByPortionSize();
         cameraUsesZoomedViewport();
-        System.out.println("Game manager checks passed (15)");
+        System.out.println("Game manager checks passed (14)");
     }
 
-    private static void supportsOneAndTwoPlayerModes() {
-        GameManager onePlayer = newManager(GameManager.GameMode.ONE_PLAYER, 1);
-        check(onePlayer.getActivePlayers().size() == 1, "1P mode should activate one player");
-        check(!onePlayer.getPlayers().get(1).isParticipating(),
-                "second player should be disabled in 1P mode");
-
-        GameManager twoPlayers = newManager(GameManager.GameMode.TWO_PLAYERS, 2);
-        check(twoPlayers.getActivePlayers().size() == 1,
-                "versus mode should activate the mouse player and use the Chef as player two");
-        check(!twoPlayers.getPlayers().get(1).isParticipating(),
-                "versus mode should not activate a second mouse");
-    }
-
-    private static void mouseAndChefControlsWorkSimultaneously() {
+    private static void gameUsesOnlyMouseControls() {
         Player mouse = new Player(256, 320);
-        Player unusedMouse = new Player(640, 320);
         Chef chef = new Chef(1200, 350);
-        GameManager manager = new GameManager(GameManager.GameMode.TWO_PLAYERS,
-                mouse, unusedMouse, chef, new Burrow(160, 880, 38),
+        GameManager manager = new GameManager(mouse, chef, new Burrow(160, 880, 38),
                 new RestaurantMap(), new Random(3));
-        InputController input = new InputController(mouse, chef, manager);
+        InputController input = new InputController(mouse, manager);
 
         input.handleKeyPressed(keyEvent(KeyEvent.KEY_PRESSED, KeyCode.W));
         input.handleKeyPressed(keyEvent(KeyEvent.KEY_PRESSED, KeyCode.UP));
@@ -67,23 +52,17 @@ public final class GameManagerChecks {
 
         check(mouse.getVelocityY() < 0 && mouse.getVelocityX() == 0,
                 "WASD should move the mouse");
-        check(chef.getVelocityY() < 0 && chef.getVelocityX() > 0,
-                "arrow keys should move the Chef at the same time");
+        check(chef.getVelocityY() == 0 && chef.getVelocityX() == 0,
+                "keyboard input should never control the Chef");
 
         input.handleKeyReleased(keyEvent(KeyEvent.KEY_RELEASED, KeyCode.W));
         check(mouse.getVelocityY() == 0,
-                "releasing the mouse key should not stop the Chef");
-        check(chef.getVelocityY() < 0 && chef.getVelocityX() > 0,
-                "Chef movement should remain active while mouse keys are released");
+                "releasing the movement key should stop the mouse");
 
         input.clearPressedKeys();
-        GameManager soloManager = new GameManager(GameManager.GameMode.ONE_PLAYER,
-                mouse, unusedMouse, chef, new Burrow(160, 880, 38),
-                new RestaurantMap(), new Random(4));
-        InputController soloInput = new InputController(mouse, chef, soloManager);
-        soloInput.handleKeyPressed(keyEvent(KeyEvent.KEY_PRESSED, KeyCode.RIGHT));
+        input.handleKeyPressed(keyEvent(KeyEvent.KEY_PRESSED, KeyCode.RIGHT));
         check(chef.getVelocityX() == 0 && chef.getVelocityY() == 0,
-                "arrow keys should not take manual control of the Chef in solo mode");
+                "arrow keys should not take manual control of the Chef");
     }
 
     private static KeyEvent keyEvent(javafx.event.EventType<KeyEvent> type, KeyCode code) {
@@ -91,7 +70,7 @@ public final class GameManagerChecks {
     }
 
     private static void spawnsEightFoodTypesAndCapsTheirValue() {
-        GameManager manager = newManager(GameManager.GameMode.ONE_PLAYER, 7);
+        GameManager manager = newManager(7);
         Set<Food.Type> types = new HashSet<>();
         for (FoodItem item : manager.getAvailableFoodItems()) {
             if (!(item.getFood() instanceof HotPotato)) {
@@ -120,23 +99,46 @@ public final class GameManagerChecks {
     }
 
     private static void newGameRestoresPlayerAndChefState() {
-        GameManager manager = newManager(GameManager.GameMode.TWO_PLAYERS, 4);
-        Player first = manager.getPlayers().get(0);
+        Player first = new Player(256, 320);
+        Chef chef = new Chef(1200, 350);
+        RestaurantMap map = new RestaurantMap();
+        GameManager manager = new GameManager(first, chef, new Burrow(160, 880, 38),
+                map, new Random(4));
         first.loseLife();
         first.setPosition(900, 900);
         first.holdFood(new Food(Food.Type.HOT_SOUP, 95, 10, true));
+        chef.setPosition(1000, 900);
+        chef.setState(Chef.State.CHASING);
+        chef.updateFoodPreparation(3, () -> 10);
+        manager.getBurrow().fillCompletely();
+        manager.update(0);
+        map.getTraps().get(0).setState(Trap.State.ACTIVE);
+        map.getTraps().get(1).setState(Trap.State.DISABLED);
 
-        manager.startNewGame(GameManager.GameMode.ONE_PLAYER);
+        manager.resetGame();
 
         check(first.getLives() == 3 && first.getHealth() == 100 && first.getHeldFood() == null,
                 "new game should restore player lives, health, and inventory");
-        check(!manager.getPlayers().get(1).isParticipating(),
-                "new game mode should be applied to the second player");
+        check(first.getX() == 256 && first.getY() == 320,
+                "restarting should restore the mouse spawn position");
+        check(chef.getX() == 1200 && chef.getY() == 350
+                        && chef.getState() == Chef.State.PREPARING_FOOD
+                        && !chef.hasPreparedFood(),
+                "restarting should restore the Chef's initial state");
+        check(manager.getScore() == 0
+                        && manager.getCompletedBurrows() == 0
+                        && manager.getBurrowSecondsRemaining() == GameManager.BURROW_DURATION_SECONDS,
+                "restarting should clear scores and restore the quota timer");
+        check(map.getTraps().get(0).getState() == Trap.State.DISABLED
+                        && map.getTraps().get(1).getState() == Trap.State.ACTIVE,
+                "restarting should restore each trap's initial state");
+        check(manager.getAvailableFoodItems().size() >= 8,
+                "restarting should respawn the floor food");
     }
 
     private static void pickedFoodCanBeDeliveredIntoQuota() {
-        GameManager manager = newManager(GameManager.GameMode.ONE_PLAYER, 13);
-        Player player = manager.getPlayers().get(0);
+        GameManager manager = newManager(13);
+        Player player = manager.getPlayer();
         FoodItem pickup = normalFood(manager);
         player.setPosition(pickup.getPosition().getX(), pickup.getPosition().getY());
         Food pickedFood = pickup.getFood();
@@ -164,18 +166,16 @@ public final class GameManagerChecks {
     }
 
     private static void failedBurrowCostsTheAssignedPlayerALife() {
-        GameManager manager = newManager(GameManager.GameMode.TWO_PLAYERS, 19);
-        Player firstOwner = manager.getBurrowOwner();
+        GameManager manager = newManager(19);
+        Player player = manager.getPlayer();
         manager.update(GameManager.BURROW_DURATION_SECONDS);
-        check(firstOwner.getLives() == 2, "expired quota should cost its owner one life");
-        check(manager.getBurrowOwner() == firstOwner,
-                "versus mode burrow ownership should stay with the only mouse player");
+        check(player.getLives() == 2, "expired quota should cost the player one life");
         check(manager.getBurrowSecondsRemaining() == GameManager.BURROW_DURATION_SECONDS,
                 "a replacement burrow should receive a fresh two-minute timer");
     }
 
     private static void threeFailedBurrowsEndOnePlayerGame() {
-        GameManager manager = newManager(GameManager.GameMode.ONE_PLAYER, 29);
+        GameManager manager = newManager(29);
         for (int attempt = 0; attempt < 3; attempt++) {
             manager.update(GameManager.BURROW_DURATION_SECONDS);
         }
@@ -186,7 +186,7 @@ public final class GameManagerChecks {
     }
 
     private static void pauseFreezesBurrowTimer() {
-        GameManager manager = newManager(GameManager.GameMode.ONE_PLAYER, 31);
+        GameManager manager = newManager(31);
         manager.setPaused(true);
         manager.update(30);
         check(manager.getBurrowSecondsRemaining() == GameManager.BURROW_DURATION_SECONDS,
@@ -209,7 +209,7 @@ public final class GameManagerChecks {
 
     private static void hotPotatoFuseExplodesAfterThirtySeconds() {
         GameManager manager = managerWithHotPotato(101);
-        Player player = manager.getPlayers().get(0);
+        Player player = manager.getPlayer();
         collectHotPotato(manager, player);
         manager.update(29.9);
         check(manager.getHotPotato() != null
@@ -222,7 +222,7 @@ public final class GameManagerChecks {
 
     private static void hotPotatoDeliveryCompletesTheBurrow() {
         GameManager manager = managerWithHotPotato(101);
-        Player player = manager.getPlayers().get(0);
+        Player player = manager.getPlayer();
         collectHotPotato(manager, player);
         player.setPosition(manager.getBurrow().getX(), manager.getBurrow().getY());
         manager.update(0.01);
@@ -260,7 +260,7 @@ public final class GameManagerChecks {
 
     private static GameManager managerWithHotPotato(long startingSeed) {
         for (long seed = startingSeed; seed < startingSeed + 200; seed++) {
-            GameManager manager = newManager(GameManager.GameMode.ONE_PLAYER, seed);
+            GameManager manager = newManager(seed);
             boolean hasPotato = manager.getAvailableFoodItems().stream()
                     .anyMatch(item -> item.getFood() instanceof HotPotato);
             if (hasPotato) {
@@ -288,12 +288,11 @@ public final class GameManagerChecks {
                 .orElseThrow(() -> new AssertionError("expected normal floor food"));
     }
 
-    private static GameManager newManager(GameManager.GameMode mode, long seed) {
-        Player first = new Player(256, 320);
-        Player second = new Player(640, 320);
+    private static GameManager newManager(long seed) {
+        Player player = new Player(256, 320);
         Chef chef = new Chef(1200, 350);
         Burrow burrow = new Burrow(160, 880, 38);
-        return new GameManager(mode, first, second, chef, burrow,
+        return new GameManager(player, chef, burrow,
                 new RestaurantMap(), new Random(seed));
     }
 

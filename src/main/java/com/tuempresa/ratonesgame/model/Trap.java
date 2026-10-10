@@ -14,6 +14,7 @@ public final class Trap {
     private final String id;
     private final Point2D position;
     private final double radius;
+    private final State initialState;
     private State state;
     private Consumer<Trap> activationListener = ignored -> { };
 
@@ -24,6 +25,7 @@ public final class Trap {
         this.id = id;
         this.position = position;
         this.radius = radius;
+        this.initialState = initialState;
         this.state = initialState;
     }
 
@@ -52,6 +54,10 @@ public final class Trap {
             throw new IllegalArgumentException("Trap state cannot be null");
         }
         this.state = state;
+    }
+
+    public void reset() {
+        state = initialState;
     }
 
     public void setActivationListener(Consumer<Trap> activationListener) {

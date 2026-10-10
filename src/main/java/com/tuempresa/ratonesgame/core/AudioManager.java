@@ -71,6 +71,17 @@ public final class AudioManager implements AutoCloseable {
         }
     }
 
+    public void reset() {
+        stepTimer = 0;
+        if (footsteps != null) {
+            footsteps.stop();
+        }
+        if (captureImpact != null) {
+            captureImpact.stop();
+        }
+        stopChaseMusic();
+    }
+
     @Override
     public void close() {
         stopChaseMusic();

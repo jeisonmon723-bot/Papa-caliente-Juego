@@ -6,9 +6,6 @@ import com.tuempresa.ratonesgame.model.Player;
 import com.tuempresa.ratonesgame.world.RestaurantMap;
 import javafx.geometry.Point2D;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public final class VisionSystem {
     private final ChefConfig config;
     private final RestaurantMap map;
@@ -18,16 +15,6 @@ public final class VisionSystem {
         this.config = config;
         this.map = map;
         this.burrow = burrow;
-    }
-
-    public List<Player> visiblePlayers(Chef chef, List<Player> players) {
-        List<Player> visible = new ArrayList<>(players.size());
-        for (Player player : players) {
-            if (canSee(chef, player)) {
-                visible.add(player);
-            }
-        }
-        return List.copyOf(visible);
     }
 
     public boolean canSee(Chef chef, Player player) {

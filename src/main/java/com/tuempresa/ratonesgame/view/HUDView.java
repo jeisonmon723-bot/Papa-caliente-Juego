@@ -1,98 +1,101 @@
 package com.tuempresa.ratonesgame.view;
 
+import com.tuempresa.ratonesgame.core.GameManager;
 import com.tuempresa.ratonesgame.model.Burrow;
 import com.tuempresa.ratonesgame.model.Player;
-import com.tuempresa.ratonesgame.core.GameManager;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+import java.util.Objects;
+
 public final class HUDView extends StackPane {
-    private final Player firstPlayer;
+    private final Player player;
     private final Burrow burrow;
     private final GameManager gameManager;
-    private final Label firstPlayerStatus = new Label();
-    private final Label secondPlayerStatus = new Label();
+    private final Label playerStatus = new Label();
     private final Label roundTimer = new Label();
     private final Label scoreStatus = new Label();
     private final Label healthStatus = new Label();
     private final Label burrowStatus = new Label();
     private final Label potatoStatus = new Label();
     private final Label alertStatus = new Label();
-    private final Label firstControls = new Label();
-    private final Label secondControls = new Label();
+    private final Label controls = new Label();
     private final ProgressBar burrowProgress = new ProgressBar();
-    private final ProgressBar firstHealth = new ProgressBar();
-    private final ProgressBar secondHealth = new ProgressBar();
-    private final StackPane captureOverlay = new StackPane();
-    private final Label captureLabel = new Label();
+    private final ProgressBar healthProgress = new ProgressBar();
+    private final StackPane gameOverOverlay = new StackPane();
+    private final Label gameOverLabel = new Label();
+    private final Button restartButton = new Button("Jugar de nuevo");
+    private Runnable restartHandler = () -> { };
 
-    public HUDView(Player firstPlayer, Burrow burrow, GameManager gameManager) {
-        this.firstPlayer = firstPlayer;
+    public HUDView(Player player, Burrow burrow, GameManager gameManager) {
+        this.player = player;
         this.burrow = burrow;
         this.gameManager = gameManager;
-        VBox statusPanel = new VBox(8, firstPlayerStatus, secondPlayerStatus,
-                roundTimer, scoreStatus, healthStatus, firstHealth, secondHealth,
-                burrowStatus, burrowProgress, potatoStatus, alertStatus,
-                firstControls, secondControls);
+
+        VBox statusPanel = new VBox(8, playerStatus, roundTimer, scoreStatus,
+                healthStatus, healthProgress, burrowStatus, burrowProgress,
+                potatoStatus, alertStatus, controls);
         statusPanel.setPadding(new Insets(18));
-        // Keep the HUD from stretching over the game canvas in its StackPane.
         statusPanel.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         statusPanel.getStyleClass().add("hud");
         StackPane.setAlignment(statusPanel, Pos.TOP_LEFT);
         burrowProgress.setPrefWidth(280);
-        firstHealth.setPrefWidth(280);
-        secondHealth.setPrefWidth(280);
-        firstHealth.getStyleClass().add("health-bar");
-        secondHealth.getStyleClass().add("health-bar");
-        firstControls.getStyleClass().add("controls-hint");
-        secondControls.getStyleClass().add("controls-hint");
-        captureLabel.getStyleClass().add("capture-label");
-        captureOverlay.getStyleClass().add("capture-overlay");
-        captureOverlay.getChildren().add(captureLabel);
-        captureOverlay.setVisible(false);
-        getChildren().addAll(statusPanel, captureOverlay);
+        healthProgress.setPrefWidth(280);
+        healthProgress.getStyleClass().add("health-bar");
+        controls.getStyleClass().add("controls-hint");
+
+        VBox gameOverPanel = new VBox(18, gameOverLabel, restartButton);
+        gameOverPanel.setAlignment(Pos.CENTER);
+        gameOverPanel.getStyleClass().add("game-over-panel");
+        gameOverLabel.getStyleClass().add("capture-label");
+        restartButton.getStyleClass().add("restart-button");
+        restartButton.setOnAction(event -> restartHandler.run());
+        gameOverOverlay.getStyleClass().add("capture-overlay");
+        gameOverOverlay.getChildren().add(gameOverPanel);
+        gameOverOverlay.setVisible(false);
+        gameOverOverlay.setManaged(false);
+        gameOverOverlay.setPickOnBounds(true);
+
+        getChildren().addAll(statusPanel, gameOverOverlay);
         setPickOnBounds(false);
         refresh();
     }
 
-    public void setCaptured(boolean captured) {
-        captureOverlay.setVisible(captured);
-        captureOverlay.setManaged(captured);
-        if (captured) {
-            captureLabel.setText("GAME OVER\nPuntaje: " + gameManager.getScore()
-                + "\nRécord: " + gameManager.getHighScore());
+    public void setRestartHandler(Runnable restartHandler) {
+        this.restartHandler = Objects.requireNonNull(restartHandler);
+    }
+
+    public void setGameOver(boolean gameOver) {
+        gameOverOverlay.setVisible(gameOver);
+        gameOverOverlay.setManaged(gameOver);
+        if (gameOver) {
+            gameOverLabel.setText("GAME OVER\nPuntaje: " + gameManager.getScore()
+                    + "\nRécord: " + gameManager.getHighScore()
+                    + "\nPresiona R o Enter para continuar");
         }
     }
 
     public void refresh() {
-        firstPlayerStatus.setText(playerStatus("Ratón 1", firstPlayer));
-        boolean versusChef = gameManager.getGameMode() == GameManager.GameMode.TWO_PLAYERS;
-        secondPlayerStatus.setText(versusChef
-                ? "Cocinero  |  Flechas para mover"
-                : "Modo: un jugador");
+        playerStatus.setText("Ratón  |  Vidas: " + player.getLives());
         int seconds = (int) Math.ceil(gameManager.getBurrowSecondsRemaining());
         roundTimer.setText(String.format("Cuota en: %02d:%02d", seconds / 60, seconds % 60));
         scoreStatus.setText("Madrigueras: " + gameManager.getScore()
-            + "  |  Récord: " + gameManager.getHighScore());
-        healthStatus.setText(versusChef
-                ? "Salud ratón: " + (int) firstPlayer.getHealth() + "%"
-                : "Salud: " + (int) firstPlayer.getHealth() + "% / 1P");
-        firstHealth.setProgress(firstPlayer.getHealth() / 100.0);
-        secondHealth.setProgress(0);
-        secondHealth.setVisible(false);
-        secondHealth.setManaged(false);
+                + "  |  Récord: " + gameManager.getHighScore());
+        healthStatus.setText("Salud: " + (int) player.getHealth() + "%");
+        healthProgress.setProgress(player.getHealth() / 100.0);
         double fill = burrow.getFillPercent();
         burrowStatus.setText(String.format("Madriguera (%d/%d pts): %d%%",
-            (int) burrow.getFoodPoints(), (int) burrow.getQuotaPoints(), (int) fill));
+                (int) burrow.getFoodPoints(), (int) burrow.getQuotaPoints(), (int) fill));
         burrowProgress.setProgress(fill / 100.0);
         if (gameManager.getHotPotato() != null) {
             potatoStatus.setText(String.format("PAPA CALIENTE: %.1f s",
-                gameManager.getHotPotato().getSecondsRemaining()));
+                    gameManager.getHotPotato().getSecondsRemaining()));
             potatoStatus.setVisible(true);
         } else {
             potatoStatus.setText("");
@@ -100,27 +103,12 @@ public final class HUDView extends StackPane {
         }
         alertStatus.setText(gameManager.isAlertVisible() ? gameManager.getAlertMessage() : "");
         alertStatus.setVisible(gameManager.isAlertVisible());
-        firstControls.setText("E: " + interactionHint(firstPlayer));
-        secondControls.setText(versusChef
-                ? "Flechas: mover al cocinero"
-                : "");
-        secondControls.setVisible(versusChef);
-        secondControls.setManaged(versusChef);
+        controls.setText("WASD: mover  |  E: " + interactionHint());
     }
 
-    // E picks up food, then releases it into the burrow when close enough.
-    private String interactionHint(Player player) {
+    private String interactionHint() {
         return player.getHeldFood() == null
-                ? "Agarrar comida"
-                : "Soltar comida en la madriguera";
-    }
-
-    private String playerStatus(String name, Player player) {
-        if (!player.isParticipating()) {
-            return name + "  |  No participa";
-        }
-        return player.isActive()
-                ? name + "  |  Vidas: " + player.getLives()
-                : name + "  |  CAPTURADO";
+                ? "agarrar comida"
+                : "soltar comida en la madriguera";
     }
 }

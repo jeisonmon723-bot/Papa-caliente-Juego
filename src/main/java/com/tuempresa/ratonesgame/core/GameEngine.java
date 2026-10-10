@@ -9,15 +9,10 @@ import com.tuempresa.ratonesgame.view.HUDView;
 import com.tuempresa.ratonesgame.world.RestaurantMap;
 import javafx.animation.AnimationTimer;
 
-import java.util.List;
-
 public final class GameEngine extends AnimationTimer {
     private static final double MAX_DELTA_SECONDS = 0.05;
     private static final double PLAYER_COLLISION_RADIUS = 12;
     private static final double CHEF_COLLISION_RADIUS = 14;
-    private static final double VERSUS_CAPTURE_DISTANCE = PLAYER_COLLISION_RADIUS + CHEF_COLLISION_RADIUS;
-    private static final double PLAYER_ONE_SPAWN_X = 256;
-    private static final double PLAYER_ONE_SPAWN_Y = 320;
 
     public enum GameState {
         RUNNING,
@@ -26,8 +21,7 @@ public final class GameEngine extends AnimationTimer {
     }
 
     private final GameCanvas canvas;
-    private final Player firstPlayer;
-    private final Player secondPlayer;
+    private final Player player;
     private final Chef chef;
     private final Burrow burrow;
     private final HUDView hud;
@@ -36,17 +30,14 @@ public final class GameEngine extends AnimationTimer {
     private final RestaurantMap map;
     private final ChefAI chefAI;
     private final GameManager gameManager;
-    private final List<Player> players;
     private GameState state = GameState.RUNNING;
     private long lastUpdate;
 
-    public GameEngine(GameCanvas canvas, Player firstPlayer, Player secondPlayer,
-                      Chef chef, Burrow burrow, HUDView hud,
-                      Camera camera, AudioManager audioManager,
+    public GameEngine(GameCanvas canvas, Player player, Chef chef, Burrow burrow,
+                      HUDView hud, Camera camera, AudioManager audioManager,
                       RestaurantMap map, ChefAI chefAI, GameManager gameManager) {
         this.canvas = canvas;
-        this.firstPlayer = firstPlayer;
-        this.secondPlayer = secondPlayer;
+        this.player = player;
         this.chef = chef;
         this.burrow = burrow;
         this.hud = hud;
@@ -55,8 +46,8 @@ public final class GameEngine extends AnimationTimer {
         this.map = map;
         this.chefAI = chefAI;
         this.gameManager = gameManager;
-        this.players = List.of(firstPlayer, secondPlayer);
         chefAI.setCaptureHandler(this::handleChefCapture);
+        hud.setRestartHandler(this::resetGame);
     }
 
     @Override
@@ -77,23 +68,25 @@ public final class GameEngine extends AnimationTimer {
         if (state == null) {
             throw new IllegalArgumentException("Game state cannot be null");
         }
+        if (this.state == state) {
+            return;
+        }
         this.state = state;
         if (state != GameState.RUNNING) {
-            firstPlayer.setVelocity(0, 0);
-            secondPlayer.setVelocity(0, 0);
-            chef.setVelocity(0, 0);
+            player.setVelocity(0, 0);
             chefAI.stop();
-            audioManager.updateProximity(Double.POSITIVE_INFINITY, 0, false);
-            hud.setCaptured(state == GameState.GAME_OVER);
             if (state == GameState.GAME_OVER) {
                 gameManager.finishGame();
+                audioManager.updateProximity(Double.POSITIVE_INFINITY, 0, false);
             } else {
                 gameManager.setPaused(true);
+                audioManager.reset();
             }
         } else {
             gameManager.setPaused(false);
             lastUpdate = 0;
         }
+        hud.setGameOver(state == GameState.GAME_OVER);
     }
 
     public GameState getState() {
@@ -114,16 +107,29 @@ public final class GameEngine extends AnimationTimer {
         }
     }
 
+    public void resetGame() {
+        gameManager.resetGame();
+        chefAI.reset();
+        camera.resetTo(player);
+        audioManager.reset();
+        state = GameState.RUNNING;
+        lastUpdate = 0;
+        hud.setGameOver(false);
+        hud.refresh();
+        render();
+    }
+
     public void notifyTrapActivated(Trap trap) {
         chefAI.notifyTrapActivated(trap);
     }
 
-    public void handleChefCapture(Player player) {
-        if (state != GameState.RUNNING || !player.loseLife()) {
+    public void handleChefCapture(Player capturedPlayer) {
+        if (state != GameState.RUNNING || capturedPlayer != player
+                || !capturedPlayer.loseLife()) {
             return;
         }
         audioManager.playCaptureImpact();
-        if (gameManager.getActivePlayers().isEmpty()) {
+        if (!player.isActive()) {
             finishGame();
         }
     }
@@ -140,67 +146,41 @@ public final class GameEngine extends AnimationTimer {
             return;
         }
 
-        boolean firstWasInBurrow = burrow.contains(firstPlayer);
-        boolean secondWasInBurrow = burrow.contains(secondPlayer);
-        boolean firstWasBeingChased = chefAI.isActivelyChasing(firstPlayer);
-        boolean secondWasBeingChased = chefAI.isActivelyChasing(secondPlayer);
-
-        if (firstPlayer.isActive()) {
-            map.move(firstPlayer, deltaTime, PLAYER_COLLISION_RADIUS);
+        boolean wasInBurrow = burrow.contains(player);
+        boolean wasBeingChased = chefAI.isActivelyChasing(player);
+        if (player.isActive()) {
+            map.move(player, deltaTime, PLAYER_COLLISION_RADIUS);
         }
-        boolean manualChef = gameManager.getGameMode() == GameManager.GameMode.TWO_PLAYERS;
-        emptyBurrowOnPursuitEntry(firstPlayer, firstWasInBurrow, firstWasBeingChased);
-        emptyBurrowOnPursuitEntry(secondPlayer, secondWasInBurrow, secondWasBeingChased);
+        if (shouldEmptyBurrowOnChasedEntry(wasInBurrow, burrow.contains(player),
+                wasBeingChased)) {
+            burrow.empty();
+        }
 
-        firstPlayer.updateHeat(deltaTime);
-        secondPlayer.updateHeat(deltaTime);
-
+        player.updateHeat(deltaTime);
         chef.updateFoodPreparation(deltaTime, gameManager::nextFoodPoints);
-        if (manualChef) {
-            chef.setState(Chef.State.PREPARING_FOOD);
-        } else {
-            chefAI.update(deltaTime, players);
-        }
+        chefAI.update(deltaTime, player);
         if (state != GameState.RUNNING) {
             return;
         }
         map.move(chef, deltaTime, CHEF_COLLISION_RADIUS);
-        if (manualChef && firstPlayer.isActive() && !burrow.contains(firstPlayer)
-                && distance(chef, firstPlayer) <= VERSUS_CAPTURE_DISTANCE) {
-            handleChefCapture(firstPlayer);
-            if (firstPlayer.isActive()) {
-                firstPlayer.setPosition(PLAYER_ONE_SPAWN_X, PLAYER_ONE_SPAWN_Y);
-            }
-        }
-        if (state != GameState.RUNNING) {
-            return;
-        }
         gameManager.update(deltaTime);
         if (gameManager.getState() == GameManager.State.GAME_OVER) {
             setState(GameState.GAME_OVER);
             return;
         }
         updateAudio(deltaTime);
-        Player cameraTarget = firstPlayer.isActive() ? firstPlayer : secondPlayer;
-        if (cameraTarget.isActive()) {
-            camera.follow(cameraTarget, deltaTime);
+        if (player.isActive()) {
+            camera.follow(player, deltaTime);
         } else {
             camera.follow(chef, deltaTime);
         }
     }
 
     private void render() {
-        canvas.render(firstPlayer, secondPlayer, chef, burrow, camera,
-            map, chefAI.getAttackSystem(), gameManager, state == GameState.GAME_OVER);
-        hud.setCaptured(state == GameState.GAME_OVER);
+        canvas.render(player, chef, burrow, camera, map,
+                chefAI.getAttackSystem(), gameManager, state == GameState.GAME_OVER);
+        hud.setGameOver(state == GameState.GAME_OVER);
         hud.refresh();
-    }
-
-    private void emptyBurrowOnPursuitEntry(Player player, boolean wasInBurrow,
-                                           boolean wasBeingChased) {
-        if (shouldEmptyBurrowOnChasedEntry(wasInBurrow, burrow.contains(player), wasBeingChased)) {
-            burrow.empty();
-        }
     }
 
     static boolean shouldEmptyBurrowOnChasedEntry(boolean wasInside,
@@ -210,14 +190,9 @@ public final class GameEngine extends AnimationTimer {
     }
 
     private void updateAudio(double deltaTime) {
-        double firstDistance = !firstPlayer.isActive() || burrow.contains(firstPlayer)
-                ? Double.POSITIVE_INFINITY : distance(chef, firstPlayer);
-        double secondDistance = !secondPlayer.isActive() || burrow.contains(secondPlayer)
-                ? Double.POSITIVE_INFINITY : distance(chef, secondPlayer);
-        double nearestDistance = Math.min(firstDistance, secondDistance);
-        audioManager.updateProximity(nearestDistance, deltaTime,
-            gameManager.getGameMode() == GameManager.GameMode.ONE_PLAYER
-                    && chefAI.isPursuitActive());
+        double distance = !player.isActive() || burrow.contains(player)
+                ? Double.POSITIVE_INFINITY : distance(chef, player);
+        audioManager.updateProximity(distance, deltaTime, chefAI.isPursuitActive());
     }
 
     private double distance(Chef chef, Player player) {

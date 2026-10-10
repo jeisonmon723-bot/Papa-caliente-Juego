@@ -49,29 +49,27 @@ public final class ChefAI {
         chef.setState(state);
     }
 
-    public void update(double deltaSeconds, List<Player> players) {
+    public void update(double deltaSeconds, Player player) {
         if (deltaSeconds < 0) {
             throw new IllegalArgumentException("deltaSeconds cannot be negative");
         }
-        List<Player> activePlayers = players.stream().filter(Player::isActive).toList();
 
         if (attack.isBusy()) {
             transitionTo(Chef.State.ATTACKING);
-            attack.update(deltaSeconds, chef, activePlayers, burrow, this::capturePlayer);
+            attack.update(deltaSeconds, chef, player, burrow, this::capturePlayer);
             stateElapsed += deltaSeconds;
             if (attack.isBusy()) {
                 return;
             }
         }
 
-        Player visibleTarget = chooseVisibleTarget(activePlayers);
-        if (visibleTarget != null) {
-            target = visibleTarget;
-            lastKnownPosition = positionOf(visibleTarget);
+        if (player.isActive() && vision.canSee(chef, player)) {
+            target = player;
+            lastKnownPosition = positionOf(player);
             searchElapsed = 0;
             searchInspectionStarted = false;
             trapEvent = null;
-            chaseTarget(visibleTarget, deltaSeconds);
+            chaseTarget(player, deltaSeconds);
             return;
         }
 
@@ -135,15 +133,24 @@ public final class ChefAI {
         chef.setVelocity(0, 0);
     }
 
-    private Player chooseVisibleTarget(List<Player> players) {
-        List<Player> visible = vision.visiblePlayers(chef, players);
-        if (target != null && target.isActive() && visible.contains(target)) {
-            return target;
-        }
-        return visible.stream()
-                .min((first, second) -> Double.compare(
-                        distanceTo(first), distanceTo(second)))
-                .orElse(null);
+    public void reset() {
+        attack.reset();
+        target = null;
+        lastKnownPosition = null;
+        navigationTarget = null;
+        currentPath = List.of();
+        pathIndex = 0;
+        repathTimer = 0;
+        stateElapsed = 0;
+        searchElapsed = 0;
+        searchInspectionStarted = false;
+        routeIndex = 0;
+        workstationIndex = 0;
+        trapEvent = null;
+        inspectedTrap = null;
+        state = Chef.State.RETURNING_TO_WORK;
+        chef.setState(state);
+        chef.setVelocity(0, 0);
     }
 
     private void chaseTarget(Player player, double deltaSeconds) {

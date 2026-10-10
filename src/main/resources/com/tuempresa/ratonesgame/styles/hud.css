@@ -30,29 +30,6 @@
     -fx-font-weight: bold;
 }
 
-.menu-screen {
-    -fx-background-color: #594333;
-}
-
-.menu-title {
-    -fx-text-fill: #f2e7cf;
-    -fx-font-family: "Georgia";
-    -fx-font-size: 42px;
-    -fx-font-weight: bold;
-}
-
-.menu-screen .button {
-    -fx-pref-width: 220px;
-    -fx-padding: 10px 18px;
-    -fx-background-color: #c0955e;
-    -fx-text-fill: #30251f;
-    -fx-font-size: 18px;
-}
-
-.menu-screen .button:hover {
-    -fx-background-color: #e0b877;
-}
-
 .capture-overlay {
     -fx-background-color: rgba(130, 20, 22, 0.62);
 }
@@ -62,4 +39,26 @@
     -fx-font-family: "Georgia";
     -fx-font-size: 52px;
     -fx-font-weight: bold;
+    -fx-text-alignment: center;
+}
+
+.game-over-panel {
+    -fx-padding: 36px;
+    -fx-background-color: rgba(43, 34, 27, 0.96);
+    -fx-background-radius: 12px;
+    -fx-border-color: #e1ba7d;
+    -fx-border-width: 3px;
+    -fx-border-radius: 12px;
+}
+
+.restart-button {
+    -fx-padding: 12px 24px;
+    -fx-background-color: #e0b877;
+    -fx-text-fill: #30251f;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.restart-button:hover {
+    -fx-background-color: #f2d49c;
 }

@@ -41,6 +41,7 @@
                 <directory>src/main/resources</directory>
                 <excludes>
                     <exclude>**/.git/**</exclude>
+                    <exclude>com/tuempresa/ratonesgame/sprites/Papa-caliente-Juego/**</exclude>
                 </excludes>
             </resource>
         </resources>

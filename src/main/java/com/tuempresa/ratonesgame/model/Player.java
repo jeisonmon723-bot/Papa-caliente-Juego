@@ -6,16 +6,19 @@ public final class Player extends Entity {
     private static final double HOT_FOOD_DAMAGE_PER_SECOND = 5;
     private static final double MAX_CARRY_SPEED_PENALTY = 0.45;
 
+    private final double spawnX;
+    private final double spawnY;
     private int lives = 3;
     private double health = MAX_HEAT;
     private Food heldFood;
     private boolean active = true;
-    private boolean participating = true;
     private double hotFoodHoldSeconds;
     private double requestedMovementSpeed;
 
     public Player(double x, double y) {
         super(x, y, 150);
+        spawnX = x;
+        spawnY = y;
         requestedMovementSpeed = getSpeed();
     }
 
@@ -77,20 +80,7 @@ public final class Player extends Entity {
     }
 
     public boolean isActive() {
-        return active && participating;
-    }
-
-    public boolean isParticipating() {
-        return participating;
-    }
-
-    public void setParticipating(boolean participating) {
-        this.participating = participating;
-        if (!participating) {
-            super.setVelocity(0, 0, 0);
-            heldFood = null;
-            hotFoodHoldSeconds = 0;
-        }
+        return active;
     }
 
     public boolean loseLife() {
@@ -113,9 +103,10 @@ public final class Player extends Entity {
         lives = 3;
         health = MAX_HEAT;
         active = true;
-        participating = true;
         heldFood = null;
         hotFoodHoldSeconds = 0;
+        requestedMovementSpeed = getSpeed();
+        setPosition(spawnX, spawnY);
         super.setVelocity(0, 0, 0);
     }
 
