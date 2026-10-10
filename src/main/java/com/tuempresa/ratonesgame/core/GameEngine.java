@@ -15,6 +15,9 @@ public final class GameEngine extends AnimationTimer {
     private static final double MAX_DELTA_SECONDS = 0.05;
     private static final double PLAYER_COLLISION_RADIUS = 12;
     private static final double CHEF_COLLISION_RADIUS = 14;
+    private static final double VERSUS_CAPTURE_DISTANCE = PLAYER_COLLISION_RADIUS + CHEF_COLLISION_RADIUS;
+    private static final double PLAYER_ONE_SPAWN_X = 256;
+    private static final double PLAYER_ONE_SPAWN_Y = 320;
 
     public enum GameState {
         RUNNING,
@@ -78,6 +81,7 @@ public final class GameEngine extends AnimationTimer {
         if (state != GameState.RUNNING) {
             firstPlayer.setVelocity(0, 0);
             secondPlayer.setVelocity(0, 0);
+            chef.setVelocity(0, 0);
             chefAI.stop();
             audioManager.updateProximity(Double.POSITIVE_INFINITY, 0, false);
             hud.setCaptured(state == GameState.GAME_OVER);
@@ -144,9 +148,7 @@ public final class GameEngine extends AnimationTimer {
         if (firstPlayer.isActive()) {
             map.move(firstPlayer, deltaTime, PLAYER_COLLISION_RADIUS);
         }
-        if (secondPlayer.isActive()) {
-            map.move(secondPlayer, deltaTime, PLAYER_COLLISION_RADIUS);
-        }
+        boolean manualChef = gameManager.getGameMode() == GameManager.GameMode.TWO_PLAYERS;
         emptyBurrowOnPursuitEntry(firstPlayer, firstWasInBurrow, firstWasBeingChased);
         emptyBurrowOnPursuitEntry(secondPlayer, secondWasInBurrow, secondWasBeingChased);
 
@@ -154,11 +156,25 @@ public final class GameEngine extends AnimationTimer {
         secondPlayer.updateHeat(deltaTime);
 
         chef.updateFoodPreparation(deltaTime, gameManager::nextFoodPoints);
-        chefAI.update(deltaTime, players);
+        if (manualChef) {
+            chef.setState(Chef.State.PREPARING_FOOD);
+        } else {
+            chefAI.update(deltaTime, players);
+        }
         if (state != GameState.RUNNING) {
             return;
         }
         map.move(chef, deltaTime, CHEF_COLLISION_RADIUS);
+        if (manualChef && firstPlayer.isActive() && !burrow.contains(firstPlayer)
+                && distance(chef, firstPlayer) <= VERSUS_CAPTURE_DISTANCE) {
+            handleChefCapture(firstPlayer);
+            if (firstPlayer.isActive()) {
+                firstPlayer.setPosition(PLAYER_ONE_SPAWN_X, PLAYER_ONE_SPAWN_Y);
+            }
+        }
+        if (state != GameState.RUNNING) {
+            return;
+        }
         gameManager.update(deltaTime);
         if (gameManager.getState() == GameManager.State.GAME_OVER) {
             setState(GameState.GAME_OVER);
@@ -200,7 +216,8 @@ public final class GameEngine extends AnimationTimer {
                 ? Double.POSITIVE_INFINITY : distance(chef, secondPlayer);
         double nearestDistance = Math.min(firstDistance, secondDistance);
         audioManager.updateProximity(nearestDistance, deltaTime,
-            chefAI.isPursuitActive());
+            gameManager.getGameMode() == GameManager.GameMode.ONE_PLAYER
+                    && chefAI.isPursuitActive());
     }
 
     private double distance(Chef chef, Player player) {

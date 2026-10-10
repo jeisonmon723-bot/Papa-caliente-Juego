@@ -41,7 +41,7 @@ public final class MainApp extends Application {
         Label title = new Label("RATONES GAME");
         title.getStyleClass().add("menu-title");
         Button onePlayer = new Button("1 jugador");
-        Button twoPlayers = new Button("2 jugadores");
+        Button twoPlayers = new Button("2 jugadores (vs Chef)");
         onePlayer.setOnAction(event -> startGame(GameManager.GameMode.ONE_PLAYER));
         twoPlayers.setOnAction(event -> startGame(GameManager.GameMode.TWO_PLAYERS));
         VBox menu = new VBox(14, title, onePlayer, twoPlayers);
@@ -61,8 +61,8 @@ public final class MainApp extends Application {
         GameManager gameManager = new GameManager(mode, firstPlayer, secondPlayer,
                 chef, burrow, map);
         GameCanvas canvas = new GameCanvas(960, 540, resources);
-        HUDView hud = new HUDView(firstPlayer, secondPlayer, burrow, gameManager);
-        InputController input = new InputController(firstPlayer, secondPlayer, gameManager);
+        HUDView hud = new HUDView(firstPlayer, burrow, gameManager);
+        InputController input = new InputController(firstPlayer, chef, gameManager);
         Camera camera = new Camera(960, 540, GameCanvas.WORLD_WIDTH,
                 GameCanvas.WORLD_HEIGHT, 5.5);
         AudioManager audioManager = new AudioManager();
