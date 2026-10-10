@@ -149,7 +149,7 @@ public final class RestaurantMap {
                     continue;
                 }
                 int next = nextY * columns + nextX;
-                if (previous[next] != -2 || !canOccupy(
+                if (previous[next] ! = -2 || !canOccupy(
                         nextX * PATH_GRID_SIZE + PATH_GRID_SIZE / 2,
                         nextY * PATH_GRID_SIZE + PATH_GRID_SIZE / 2, radius)) {
                     continue;
