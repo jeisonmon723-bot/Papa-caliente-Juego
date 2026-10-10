@@ -1,0 +1,59 @@
+.hud {
+    -fx-background-color: rgba(43, 34, 27, 0.88);
+    -fx-background-radius: 4;
+    -fx-border-color: #d0a66c;
+    -fx-border-width: 2;
+    -fx-border-radius: 4;
+}
+
+.hud .label {
+    -fx-text-fill: #f2e7cf;
+    -fx-font-family: "Georgia";
+    -fx-font-size: 14px;
+}
+
+.hud .progress-bar {
+    -fx-accent: #84a05b;
+}
+
+.hud .health-bar {
+    -fx-accent: #c65d4a;
+}
+
+.hud .label {
+    -fx-text-fill: #f2e7cf;
+}
+
+.menu-screen {
+    -fx-background-color: #594333;
+}
+
+.menu-title {
+    -fx-text-fill: #f2e7cf;
+    -fx-font-family: "Georgia";
+    -fx-font-size: 42px;
+    -fx-font-weight: bold;
+}
+
+.menu-screen .button {
+    -fx-pref-width: 220px;
+    -fx-padding: 10px 18px;
+    -fx-background-color: #c0955e;
+    -fx-text-fill: #30251f;
+    -fx-font-size: 18px;
+}
+
+.menu-screen .button:hover {
+    -fx-background-color: #e0b877;
+}
+
+.capture-overlay {
+    -fx-background-color: rgba(130, 20, 22, 0.62);
+}
+
+.capture-label {
+    -fx-text-fill: #fff0da;
+    -fx-font-family: "Georgia";
+    -fx-font-size: 52px;
+    -fx-font-weight: bold;
+}

@@ -1,3 +1,7 @@
-# Godot 4+ specific ignores
-.godot/
-/android/
+# Java and Maven build output
+target/
+*.class
+
+# IDE project files
+.idea/
+*.iml
